@@ -39,17 +39,4 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
 
 
-class RecipeListSerializer(serializers.ModelSerializer):
-    """Сериалайзер для модели рецептов."""
-    is_favorited = serializers.BooleanField()
-    is_in_shopping_cart = serializers.BooleanField()
-
-    class Meta:
-        fields = '__all__'
-        model = Recipe
-
-
-
-
-
 

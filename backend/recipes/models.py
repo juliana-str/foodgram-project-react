@@ -72,6 +72,8 @@ class Recipe(models.Model):
         verbose_name='Дата публикации',
         auto_now_add=True,
     )
+    is_favorited = models.BooleanField(null=True)
+    is_in_shopping_cart = models.BooleanField(null=True)
 
     class Meta:
         ordering = ['-pub_date']
