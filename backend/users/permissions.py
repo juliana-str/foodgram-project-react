@@ -16,12 +16,13 @@ class IsAdminOrReadOnly(permissions.BasePermission):
                     and request.user.is_admin))
 
 
-class IsAuthorOrAdminOrReadOnly(permissions.BasePermission):
+class IsAuthorOrReadOnly(permissions.BasePermission):
+    """Доступ разрешен только автору."""
     def has_permission(self, request, view):
         return (request.method in permissions.SAFE_METHODS
                 or request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
-        return (request.method in permissions.SAFE_METHODS
-                or (request.user.is_admin
-                    or obj.author == request.user))
+        return (obj.author == request.user or request.method
+                in permissions.SAFE_METHODS)
+
