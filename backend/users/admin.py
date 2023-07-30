@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import User
+from .models import Subscribe, User
 
 
 @admin.register(User)
@@ -13,3 +13,6 @@ class UserAdmin(admin.ModelAdmin):
         'is_subscribed'
     )
     search_fields = ('username', 'email')
+
+
+admin.site.register(Subscribe)
