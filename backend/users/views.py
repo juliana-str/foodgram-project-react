@@ -1,16 +1,16 @@
 from sqlite3 import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer
-from rest_framework import (filters, status, permissions, serializers,
+from rest_framework import (filters, status, serializers,
                             mixins, viewsets)
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import permission_classes, action
 from rest_framework.response import Response
-from rest_framework.permissions import (AllowAny, IsAuthenticatedOrReadOnly, IsAuthenticated, IsAdminUser)
+from rest_framework.permissions import (AllowAny, IsAuthenticated)
 
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .models import User
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsAuthorOnly
 
 from .serializers import (
     UserSerializer, SubscribeSerializer)
@@ -27,10 +27,9 @@ class UserViewSet(ModelViewSet):
     search_fields = ('username', 'email')
     lookup_field = "username"
 
-
     @permission_classes([AllowAny])
     @action(detail=True, methods=['post'])
-    def signup(request):
+    def signup(self, request):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data["username"]
@@ -56,6 +55,16 @@ class UserViewSet(ModelViewSet):
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+    @permission_classes([IsAuthorOnly,])
+    @action(detail=True, methods=['get'])
+    def me(self, request):
+        serializer = UserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        User.objects.get(request.user)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SubscribeViewSet(mixins.ListModelMixin,
