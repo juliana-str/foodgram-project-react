@@ -1,30 +1,41 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
-from recipes.validators import validate_username
-
+from django.db.models import Q, F
 
 class User(AbstractUser):
     """Модель просмотра, создания и удаления пользователей."""
-    username = models.CharField(
-        max_length=150,
-        unique=True,
-        validators=(validate_username,),
-        verbose_name='Уникальный юзернейм'
-    ),
-    first_name = models.CharField(
-        max_length=150,
-        verbose_name='Имя'
-    ),
-    last_name = models.CharField(
-        max_length=150,
-        verbose_name='Фамилия'
-    ),
-    email = models.EmailField(
-        max_length=254,
-        verbose_name='Адрес электронной почты'
-    ),
-    is_subscribed = models.BooleanField()
+
+    is_subscribed = models.BooleanField(
+        null=True
+    )
+
+    class Meta:
+        ordering = ('id',)
 
     def __str__(self):
         return self.username
+
+
+class Subscribe(models.Model):
+    """Модель создания и редактирования подписок на авторов."""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='follower',
+    )
+    following = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='following',
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='unique_name_following'),
+            models.CheckConstraint(
+                check=~Q(user=F('following')),
+                name='check_following'
+            )
+        ]
