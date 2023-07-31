@@ -43,7 +43,7 @@ class RecipeViewSet(ModelViewSet):
     """Вьюсет для просмотра, создания, изменения, удаления рецептов."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
@@ -54,6 +54,25 @@ class RecipeViewSet(ModelViewSet):
     def perform_create(self, serializer):
         """Метод создания рецепта."""
         serializer.save(author=self.request.user)
+
+
+class FavoriteViewSet(mixins.CreateModelMixin,
+                      mixins.DestroyModelMixin,
+                      GenericViewSet):
+    """Вьюсет для создания и удаления рецептов из избранного."""
+    serializer_class = RecipeSerializer
+    permission_classes = (IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend,)
+    search_fields = ('following__username',)
+
+    def get_queryset(self):
+        """Метод получения определенного автора."""
+        return get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
+
+    queryset = Recipe.objects.filter(is_favorited=True).all()
+    def perform_create(self, serializer):
+        """Метод создания подписки на автора."""
+        serializer.save(user=self.request.user, recipe=self.get_queryset())
 
 
 class ShoppingCartViewSet(ModelViewSet):
@@ -70,13 +89,3 @@ class ShoppingCartViewSet(ModelViewSet):
             shopping_cart.append(recipe.get('ingredients'))
         with open('shopping_cart.txt', 'w', encoding='utf-8') as file:
             file.write('\n'.join(map(str,shopping_cart)))
-
-
-class FavoriteViewSet(mixins.CreateModelMixin,
-                      mixins.DestroyModelMixin,
-                      GenericViewSet):
-    """Вьюсет для создания и удаления рецептов из избранного."""
-    queryset = Recipe.objects.filter(is_favorited=True).all()
-    serializer_class = RecipeSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
-

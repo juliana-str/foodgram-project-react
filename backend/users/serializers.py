@@ -3,7 +3,7 @@ from rest_framework.fields import CurrentUserDefault
 
 from users.models import Subscribe, User
 
-from recipes.validators import validate_username
+from .validators import validate_username
 
 
 class UserSerializer(serializers.ModelSerializer):
