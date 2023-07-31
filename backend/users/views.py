@@ -73,7 +73,7 @@ class SubscribeViewSet(mixins.ListModelMixin,
     """Вьюсет для просмотра, создания подписки на авторов."""
     serializer_class = SubscribeSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
+    filter_backends = (DjangoFilterBackend,)
     search_fields = ('following__username',)
 
     def get_queryset(self):
