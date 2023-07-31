@@ -1,13 +1,14 @@
 from sqlite3 import IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.serializers import PasswordSerializer
+from djoser.serializers import PasswordSerializer, TokenSerializer
 from rest_framework import (filters, status, serializers,
                             mixins, viewsets)
 from rest_framework.decorators import permission_classes, action
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.permissions import (AllowAny, IsAuthenticated)
+from rest_framework.permissions import (AllowAny, IsAuthenticated, IsAdminUser)
 
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from .models import User
 from .permissions import IsAuthorOnly
@@ -21,17 +22,16 @@ class UserViewSet(mixins.CreateModelMixin,
                   GenericViewSet):
     """Вьюсет для просмотра, создания, удаления пользователей."""
     queryset = User.objects.all()
+    permission_classes = (IsAdminUser,)
     serializer_class = UserSerializer
-    filter_backends = (
-        DjangoFilterBackend,
-        filters.SearchFilter,
-    )
+    filter_backends = (DjangoFilterBackend,)
     search_fields = ('username', 'email')
     lookup_field = "username"
 
     @action(detail=True, methods=['post'],
             permission_classes=(AllowAny,))
     def signup(self, request):
+        """Метод для регистрации пользователей."""
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data["username"]
@@ -48,6 +48,7 @@ class UserViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post'],
             permission_classes=(IsAuthenticated))
     def set_password(self, request):
+        """Метод для смены пароля."""
         user = self.get_object()
         serializer = PasswordSerializer(data=request.data)
         if serializer.is_valid():
@@ -58,9 +59,21 @@ class UserViewSet(mixins.CreateModelMixin,
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
+    # @action(detail=True, methods=['post'],
+    #           permission_classes=[AllowAny])
+    # def get_token(request):
+    #     serializer = TokenSerializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     username = serializer.validated_data["username"]
+    #     user = get_object_or_404(User, username=username)
+    #     return Response({"token": token}, status=status.HTTP_200_OK)
+    #     raise serializers.ValidationError("Введен неверный код.")
+
+
     @action(detail=True, methods=['get'],
             permission_classes=(IsAuthenticated))
     def me(self, request):
+        """Метод для просмотра личной информации."""
         serializer = UserSerializer(user=request.user)
         User.objects.get(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
