@@ -19,7 +19,7 @@ class IngredientViewSet(mixins.ListModelMixin, GenericViewSet):
     """Вьюсет для просмотра ингредиентов."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     def get_ingredient(self):
         """Метод получения определенного ингредиента."""
@@ -32,7 +32,7 @@ class TagViewSet(mixins.ListModelMixin,
     """Вьюсет для просмотра тегов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     def get_tag(self):
         """Метод получения определенного тега."""
@@ -43,7 +43,7 @@ class RecipeViewSet(ModelViewSet):
     """Вьюсет для просмотра, создания, изменения, удаления рецептов."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     http_method_names = ['get', 'post', 'patch', 'delete']
 
@@ -59,7 +59,7 @@ class RecipeViewSet(ModelViewSet):
 class ShoppingCartViewSet(ModelViewSet):
     """Вьюсет для просмотра, создания, списка продуктов для рецептов."""
     serializer_class = RecipeSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
 
     def create_shopping_cart(self):
@@ -76,6 +76,7 @@ class FavoriteViewSet(mixins.CreateModelMixin,
                       mixins.DestroyModelMixin,
                       GenericViewSet):
     """Вьюсет для создания и удаления рецептов из избранного."""
-    queryset = Recipe.objects.filter(is_favorited=True)
+    queryset = Recipe.objects.filter(is_favorited=True).all()
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
+

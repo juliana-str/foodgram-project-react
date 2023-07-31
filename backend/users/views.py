@@ -7,7 +7,7 @@ from rest_framework.decorators import permission_classes, action
 from rest_framework.response import Response
 from rest_framework.permissions import (AllowAny, IsAuthenticated)
 
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from .models import User
 from .permissions import IsAuthorOnly
@@ -16,7 +16,9 @@ from .serializers import (
     UserSerializer, SubscribeSerializer)
 
 
-class UserViewSet(ModelViewSet):
+class UserViewSet(mixins.CreateModelMixin,
+                  mixins.RetrieveModelMixin,
+                  GenericViewSet):
     """Вьюсет для просмотра, создания, удаления пользователей."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -27,8 +29,8 @@ class UserViewSet(ModelViewSet):
     search_fields = ('username', 'email')
     lookup_field = "username"
 
-    @permission_classes([AllowAny])
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'],
+            permission_classes=(AllowAny,))
     def signup(self, request):
         serializer = UserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -43,30 +45,30 @@ class UserViewSet(ModelViewSet):
             )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @permission_classes([IsAuthenticated])
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'],
+            permission_classes=(IsAuthenticated))
     def set_password(self, request):
         user = self.get_object()
         serializer = PasswordSerializer(data=request.data)
         if serializer.is_valid():
             user.set_password(serializer.validated_data['password'])
-            user.save()
+            serializer.save()
             return Response({'status': 'password set'})
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-    @permission_classes([IsAuthorOnly])
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'],
+            permission_classes=(IsAuthenticated))
     def me(self, request):
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        serializer = UserSerializer(user=request.user)
         User.objects.get(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SubscribeViewSet(mixins.ListModelMixin,
                        mixins.CreateModelMixin,
+                       mixins.DestroyModelMixin,
                        viewsets.GenericViewSet):
     """Вьюсет для просмотра, создания подписки на авторов."""
     serializer_class = SubscribeSerializer

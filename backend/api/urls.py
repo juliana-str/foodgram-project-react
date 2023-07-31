@@ -16,34 +16,32 @@ from api.views import (
 app_name = 'api'
 
 router = DefaultRouter()
-router.register('users', UserViewSet, basename='users')
-router.register('users/set_password', UserViewSet, basename='set_password')
-router.register('users/me', UserViewSet, basename='me')
-router.register(r'users/(?P<id>\d+)/subscribes', SubscribeViewSet, basename='subscribes')
-router.register('ingredients', IngredientViewSet, basename='ingredients')
-router.register('recipes', RecipeViewSet, basename='recipes')
-router.register('tags', TagViewSet, basename='tag')
-router.register(
-    r'recipes/(?P<id>\d+)/shopping_cart',
+router.register(r'users', UserViewSet, basename='users')
+router.register(r'users/me', UserViewSet, basename='me')
+router.register(r'users/set_password', UserViewSet, basename='set_password')
+router.register(r'users/subscriptions', SubscribeViewSet, basename='subscriptions')
+router.register(r'users/<int:id>/subscribes', SubscribeViewSet, basename='subscribes')
+router.register(r'ingredients', IngredientViewSet, basename='ingredients')
+router.register(r'tags', TagViewSet, basename='tag')
+router.register(r'recipes', RecipeViewSet, basename='recipes')
+router.register(r'recipes/<int:id>/favorite',
+                FavoriteViewSet,
+                basename='favorite')
+router.register(r'recipes/<int:id>/shopping_cart',
     ShoppingCartViewSet,
     basename='shopping_cart')
-router.register('recipes/download_shopping_cart',
+router.register(r'recipes/download_shopping_cart',
     ShoppingCartViewSet,
     basename='download_shopping_cart')
-router.register(
-    r'recipes/(?P<id>\d+)/favorite',
-    FavoriteViewSet,
-    basename='favorite')
+
 
 # auth_path = [
-#     #
-#     # path(r'auth/', ),
 #     path('auth/token/login', login, name='login'),
 #     path('auth/token/logout', logout, name='logout')
 # ]
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('', include('djoser.urls')),
-    path(r'auth/', include('djoser.urls.authtoken'))
+    path('auth/', include('djoser.urls.authtoken')),
+
 ]
