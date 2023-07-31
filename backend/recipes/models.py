@@ -21,7 +21,7 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
-    """Модель просмотра, создания и удаления тегов."""
+    """Модель для просмотра тегов."""
     name = models.CharField(
         max_length=200,
         unique=True,
@@ -47,7 +47,6 @@ class Tag(models.Model):
 
 class Recipe(models.Model):
     """Модель просмотра, создания, редактирования и удаления рецептов."""
-
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE
@@ -78,17 +77,13 @@ class Recipe(models.Model):
     class Meta:
         ordering = ['-pub_date']
         verbose_name = 'Рецепт'
-        # constraints = [
-        #     models.UniqueConstraint(
-        #         fields=['name', 'ingredients'],
-        #         name='unique_ingredients_in_recipe')
-        # ]
 
     def __str__(self):
         return self.name
 
 
 class IngredientInRecipe(models.Model):
+    """Модель для просмотра ингредиентов."""
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE
@@ -101,3 +96,4 @@ class IngredientInRecipe(models.Model):
         default=1,
         verbose_name='Количество'
     )
+

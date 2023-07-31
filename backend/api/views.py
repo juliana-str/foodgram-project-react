@@ -1,5 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins
+from rest_framework import mixins, request
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
@@ -58,11 +58,24 @@ class RecipeViewSet(ModelViewSet):
 
 class ShoppingCartViewSet(ModelViewSet):
     """Вьюсет для просмотра, создания, списка продуктов для рецептов."""
-    serializer_class = IngredientInRecipeSerializer
+    serializer_class = RecipeSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
 
-    def get_recipe_ingredients(self):
-        """Метод получения ингредиентов определенного рецепта."""
-        recipe = get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
-        return recipe.filter('ingredients').all()
+    def create_shopping_cart(self):
+        """Метод создания списка покупок."""
+        shopping_cart = []
+        recipes = Recipe.objects.filter(is_in_shopping_cart=True).all()
+        for recipe in recipes:
+            shopping_cart.append(recipe.get('ingredients'))
+        with open('shopping_cart.txt', 'w', encoding='utf-8') as file:
+            file.write('\n'.join(map(str,shopping_cart)))
+
+
+class FavoriteViewSet(mixins.CreateModelMixin,
+                      mixins.DestroyModelMixin,
+                      GenericViewSet):
+    """Вьюсет для создания и удаления рецептов из избранного."""
+    queryset = Recipe.objects.filter(is_favorited=True)
+    serializer_class = RecipeSerializer
+    permission_classes = (IsAuthorOrReadOnly,)
