@@ -1,6 +1,6 @@
 from django.db import models
 
-from .validators import validate_slug
+from users.validators import validate_slug
 from users.models import User
 
 
@@ -59,7 +59,8 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientInRecipe',
-        through_fields=('recipe', 'ingredient')
+        through_fields=('recipe', 'ingredient'),
+        verbose_name = 'Ингредиенты'
     )
     image = models.ImageField(upload_to='recipes/')
     text = models.TextField(verbose_name='Описание')
@@ -96,4 +97,40 @@ class IngredientInRecipe(models.Model):
         default=1,
         verbose_name='Количество'
     )
+
+    class Meta:
+        verbose_name = 'Ингредиенты в рецепте'
+        verbose_name_plural = 'Ингредиенты в рецептах'
+        constraints = [
+                models.UniqueConstraint(
+                    fields=['recipe', 'ingredient'],
+                    name='unique_ingredients'
+                )
+        ]
+
+
+class Favorite(models.Model):
+    """Модель для создания избранных рецептов."""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorite_user',
+        verbose_name='Добавил в избранное'
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorite_recipe',
+        verbose_name='Избранный рецепт'
+    )
+
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite'
+            )
+        ]
 

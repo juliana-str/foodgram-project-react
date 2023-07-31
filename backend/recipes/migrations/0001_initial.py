@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import recipes.validators
+import users.validators
 
 
 class Migration(migrations.Migration):
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             name='Tag',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('slug', models.SlugField(max_length=200, null=True, unique=True, validators=[recipes.validators.validate_slug], verbose_name='Уникальный слаг')),
+                ('slug', models.SlugField(max_length=200, null=True, unique=True, validators=[users.validators.validate_slug], verbose_name='Уникальный слаг')),
             ],
         ),
         migrations.CreateModel(
