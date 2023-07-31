@@ -1,17 +1,17 @@
 from sqlite3 import IntegrityError
+
+from django.contrib.auth.tokens import default_token_generator
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer, TokenSerializer
-from rest_framework import (filters, status, serializers,
+from rest_framework import (status, serializers,
                             mixins, viewsets)
 from rest_framework.decorators import permission_classes, action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.permissions import (AllowAny, IsAuthenticated, IsAdminUser)
-
 from rest_framework.viewsets import GenericViewSet
 
 from .models import User
-from .permissions import IsAuthorOnly
 
 from .serializers import (
     UserSerializer, SubscribeSerializer)
@@ -59,15 +59,16 @@ class UserViewSet(mixins.CreateModelMixin,
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-    # @action(detail=True, methods=['post'],
-    #           permission_classes=[AllowAny])
-    # def get_token(request):
-    #     serializer = TokenSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     username = serializer.validated_data["username"]
-    #     user = get_object_or_404(User, username=username)
-    #     return Response({"token": token}, status=status.HTTP_200_OK)
-    #     raise serializers.ValidationError("Введен неверный код.")
+    @action(detail=True, methods=['post'],
+              permission_classes=[AllowAny])
+    def get_token(request):
+        serializer = TokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data["username"]
+        user = get_object_or_404(User, username=username)
+        token = default_token_generator.make_token(user)
+        return Response({"token": token, "user": user}, status=status.HTTP_200_OK)
+
 
 
     @action(detail=True, methods=['get'],
