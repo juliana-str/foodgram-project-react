@@ -2,7 +2,7 @@ from sqlite3 import IntegrityError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer
-from rest_framework import (status, serializers,
+from rest_framework import (filters, status, serializers,
                             mixins, viewsets)
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -25,15 +25,17 @@ from users.models import User
 from .permissions import IsAuthorOrReadOnly
 
 
-class UserGetViewSet(mixins.ListModelMixin,
-                     mixins.RetrieveModelMixin,
-                     GenericViewSet):
+class UserViewSet(ModelViewSet):
     """Вьюсет для модели пользователей."""
     queryset = User.objects.all()
-    serializer_class = UserGetSerializer
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('username', 'email')
     lookup_field = "username"
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return UserGetSerializer
+        return UserCreateSerializer
 
     @action(detail=True, methods=['get'],
             permission_classes=IsAuthenticated)
@@ -45,24 +47,12 @@ class UserGetViewSet(mixins.ListModelMixin,
 
     @action(detail=True, methods=['get'],
             permission_classes=[AllowAny])
-    def get_user(request):
+    def get_user(self):
         """Метод просмотра информации о пользователе."""
         serializer = UserGetSerializer()
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(User, id=id)
+        user = get_object_or_404(User, pk=self.kwargs.get('user_id'))
         return Response(user.data, status=status.HTTP_200_OK)
-
-
-class UserCreateViewSet(mixins.CreateModelMixin,
-                        mixins.UpdateModelMixin,
-                        mixins.DestroyModelMixin,
-                        GenericViewSet):
-    """Вьюсет для создания, редактирования, удаления пользователей."""
-    queryset = User.objects.all()
-    serializer_class = UserCreateSerializer
-    filter_backends = (DjangoFilterBackend,)
-    search_fields = ('username', 'email')
-    lookup_field = "username"
 
     @action(detail=True, methods=['post'],
             permission_classes=AllowAny)
@@ -122,10 +112,14 @@ class IngredientViewSet(mixins.ListModelMixin,
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
+    filter_backends = (filters.SearchFilter, )
+    search_fields = ('^name', )
+
 
     def get_ingredient(self):
         """Метод получения определенного ингредиента."""
-        return get_object_or_404(Ingredient, pk=self.kwargs.get('ingredient_id'))
+        return get_object_or_404(Ingredient,
+                                 pk=self.kwargs.get('ingredient_id'))
 
 
 class TagViewSet(mixins.ListModelMixin,
@@ -174,7 +168,6 @@ class FavoriteViewSet(mixins.CreateModelMixin,
     def get_queryset(self):
         """Метод получения определенного рецепта."""
         return get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
-
 
     def perform_create(self, serializer):
         """Метод добавления рецепта в избранное."""

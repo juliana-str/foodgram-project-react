@@ -6,7 +6,7 @@ from recipes.models import (
     Favorite, Ingredient, IngredientInRecipe, Tag, Recipe
 )
 from users.models import Subscribe, User
-from api.validators import validate_username
+from .validators import validate_username
 
 
 class UserGetSerializer(serializers.ModelSerializer):
@@ -14,8 +14,8 @@ class UserGetSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
-        fields = '__all__'
-        required_fields = fields
+        fields = ('id', 'email', 'username', 'first_name', 'last_name',
+                  'is_subscribed')
         model = User
 
     def get_is_subscribed(self, obj):
@@ -44,7 +44,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'email', 'username', 'first_name', 'last_name')
         required_fields = fields
         model = User
 

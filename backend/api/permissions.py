@@ -27,4 +27,4 @@ class IsAuthorOnly(permissions.BasePermission):
                 and request.user.is_authenticated)
 
     def has_object_permission(self, request, view, obj):
-        return (obj.author == request.user)
+        return obj.author == request.user

@@ -8,16 +8,20 @@ class Ingredient(models.Model):
     """Модель просмотра, создания и удаления ингридиентов."""
     name = models.CharField(
         max_length=200,
-        db_index=True,
         verbose_name='Ингридиент'
-    ),
+    )
     measurement_unit = models.CharField(
         max_length=200,
         verbose_name='Единица измерения'
-    ),
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Ингридиент'
+        verbose_name_plural = 'Ингридиенты'
 
     def __str__(self):
-        return self.name
+        return f'{self.name}, {self.measurement_unit}'
 
 
 class Tag(models.Model):
@@ -26,13 +30,7 @@ class Tag(models.Model):
         max_length=200,
         unique=True,
         verbose_name='Название'
-    ),
-    color = models.CharField(
-        max_length=7,
-        null=True,
-        unique=True,
-        verbose_name='Цвет в HEX'
-    ),
+    )
     slug = models.SlugField(
         max_length=200,
         null=True,
@@ -40,6 +38,16 @@ class Tag(models.Model):
         unique=True,
         verbose_name='Уникальный слаг'
     )
+    color = models.CharField(
+        max_length=7,
+        null=True,
+        unique=True,
+        verbose_name='Цвет в HEX'
+    )
+
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
 
     def __str__(self):
         return self.name
@@ -47,15 +55,15 @@ class Tag(models.Model):
 
 class Recipe(models.Model):
     """Модель просмотра, создания, редактирования и удаления рецептов."""
+    name = models.CharField(max_length=200)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE
-    ),
+    )
     tags = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE
     )
-    name = models.CharField(max_length=200)
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientInRecipe',
@@ -134,4 +142,3 @@ class Favorite(models.Model):
                 name='unique_favorite'
             )
         ]
-
