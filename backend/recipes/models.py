@@ -1,6 +1,6 @@
 from django.db import models
 
-from users.validators import validate_slug, validate_amount
+from api.validators import validate_slug, validate_amount
 from users.models import User
 
 
