@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Q, F
 
+
 class User(AbstractUser):
     """Модель просмотра, создания и удаления пользователей."""
 

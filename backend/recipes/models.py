@@ -1,6 +1,6 @@
 from django.db import models
 
-from users.validators import validate_slug
+from users.validators import validate_slug, validate_amount
 from users.models import User
 
 
@@ -80,7 +80,7 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
 
     def __str__(self):
-        return self.name
+        return f'{self.author} {self.name}'
 
 
 class IngredientInRecipe(models.Model):
@@ -94,8 +94,8 @@ class IngredientInRecipe(models.Model):
         on_delete=models.CASCADE
     )
     amount = models.PositiveIntegerField(
-        default=1,
-        verbose_name='Количество'
+        verbose_name='Количество',
+        validators=(validate_amount,)
     )
 
     class Meta:
@@ -123,6 +123,7 @@ class Favorite(models.Model):
         related_name='favorite_recipe',
         verbose_name='Избранный рецепт'
     )
+    favorite_count = models.PositiveIntegerField(null=True)
 
     class Meta:
         verbose_name = 'Избранное'

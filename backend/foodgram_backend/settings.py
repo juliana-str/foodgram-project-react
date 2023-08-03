@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', '1234')
 DEBUG = True
 # DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS=['158.160.30.4', 'foodgramproject.myddns.me', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS=['127.0.0.1', 'localhost']
 # ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 INSTALLED_APPS = [
@@ -118,17 +118,19 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    ],
+    # 'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    # ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
 }
 
 DJOSER = {
-        'LOGIN_FIELD': 'email',
+    'LOGIN_FIELD': 'email',
 }
 
