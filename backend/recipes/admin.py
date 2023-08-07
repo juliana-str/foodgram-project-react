@@ -15,9 +15,9 @@ class Recipe(admin.ModelAdmin):
     ingredients.short_description = 'Ingredients'
 
     list_display = (
+        'name',
         'author',
         'tags',
-        'name',
         'ingredients',
         'image',
         'text',

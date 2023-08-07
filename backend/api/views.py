@@ -1,7 +1,8 @@
 from sqlite3 import IntegrityError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.serializers import PasswordSerializer
+from djoser.serializers import PasswordSerializer, TokenSerializer
+from djoser.social import token
 from rest_framework import (filters, status, serializers,
                             mixins, viewsets)
 from rest_framework.decorators import action
@@ -73,6 +74,19 @@ class UserViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post'],
             permission_classes=IsAuthenticated)
+    def get_token(request):
+        """Метод получения токена."""
+        serializer = TokenSerializer()
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data["username"]
+        password = serializer.validated_data["password"]
+        user = get_object_or_404(User, username=username, password=password)
+        if user:
+            return Response({"token": token}, status=status.HTTP_200_OK)
+        raise serializers.ValidationError("Введены неверные данные.")
+
+    @action(detail=True, methods=['post'],
+            permission_classes=IsAuthenticated)
     def set_password(self, request):
         """Метод для смены пароля."""
         user = self.get_object()
@@ -114,7 +128,6 @@ class IngredientViewSet(mixins.ListModelMixin,
     permission_classes = (AllowAny,)
     filter_backends = (filters.SearchFilter, )
     search_fields = ('^name', )
-
 
     def get_ingredient(self):
         """Метод получения определенного ингредиента."""

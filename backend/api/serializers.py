@@ -21,8 +21,8 @@ class UserGetSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         if (self.context.get('request')
            and not self.context['request'].user.is_anonymous):
-            return Subscribe.objects.filter(user=self.context['request'].user,
-                                            author=obj).exists()
+            return Subscribe.objects.filter(user=self.context['request'].user
+                                            ).exists()
         return False
 
 
@@ -110,8 +110,9 @@ class TagSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
     image = Base64ImageField(read_only=True)
-    name = serializers.ReadOnlyField()
-    cooking_time = serializers.ReadOnlyField()
+    tag = serializers.PrimaryKeyRelatedField(
+        read_only=True
+    )
 
     class Meta:
         fields = '__all__'

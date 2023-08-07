@@ -1,5 +1,5 @@
 import os
-from datetime import timedelta
+
 from pathlib import Path
 
 
@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', '1234')
 DEBUG = True
 # DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS=['127.0.0.1', 'localhost']
+ALLOWED_HOSTS=['127.0.0.1', 'localhost', 'host.docker.internal']
 # ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 INSTALLED_APPS = [
@@ -118,9 +118,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-    # ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
@@ -132,5 +129,6 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
+    'HIDE_USERS': False
 }
 

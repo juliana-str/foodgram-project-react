@@ -53,22 +53,51 @@ class Tag(models.Model):
         return self.name
 
 
+class IngredientInRecipe(models.Model):
+    """Модель для просмотра ингредиентов."""
+    name = models.ForeignKey(
+        Ingredient,
+        on_delete=models.CASCADE,
+        related_name='recipe'
+    )
+    measurement_unit = models.CharField(
+        max_length=200,
+        verbose_name='Единица измерения'
+    )
+    amount = models.PositiveIntegerField(
+        verbose_name='Количество',
+        default=1,
+        validators=(validate_amount,)
+    )
+
+    class Meta:
+        verbose_name = 'Ингредиенты в рецепте'
+        verbose_name_plural = 'Ингредиенты в рецептах'
+        # constraints = [
+        #         models.UniqueConstraint(
+        #             fields=['recipe', 'ingredient'],
+        #             name='unique_ingredients'
+        #         )
+        # ]
+
+
 class Recipe(models.Model):
     """Модель просмотра, создания, редактирования и удаления рецептов."""
     name = models.CharField(max_length=200)
     author = models.ForeignKey(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='recipe'
     )
     tags = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE
     )
-    ingredients = models.ManyToManyField(
-        Ingredient,
-        through='IngredientInRecipe',
-        through_fields=('recipe', 'ingredient'),
-        verbose_name = 'Ингредиенты'
+    ingredients = models.ForeignKey(
+        IngredientInRecipe,
+        on_delete=models.CASCADE,
+        verbose_name = 'Ингредиенты',
+        related_name='ingredient_in_recipe'
     )
     image = models.ImageField(upload_to='recipes/')
     text = models.TextField(verbose_name='Описание')
@@ -78,7 +107,7 @@ class Recipe(models.Model):
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации',
-        auto_now_add=True,
+        auto_now_add=True
     )
     is_favorited = models.BooleanField(null=True)
     is_in_shopping_cart = models.BooleanField(null=True)
@@ -88,33 +117,7 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
 
     def __str__(self):
-        return f'{self.author} {self.name}'
-
-
-class IngredientInRecipe(models.Model):
-    """Модель для просмотра ингредиентов."""
-    ingredient = models.ForeignKey(
-        Ingredient,
-        on_delete=models.CASCADE
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE
-    )
-    amount = models.PositiveIntegerField(
-        verbose_name='Количество',
-        validators=(validate_amount,)
-    )
-
-    class Meta:
-        verbose_name = 'Ингредиенты в рецепте'
-        verbose_name_plural = 'Ингредиенты в рецептах'
-        constraints = [
-                models.UniqueConstraint(
-                    fields=['recipe', 'ingredient'],
-                    name='unique_ingredients'
-                )
-        ]
+        return f'{self.name}, {self.author}'
 
 
 class Favorite(models.Model):
