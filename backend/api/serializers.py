@@ -97,6 +97,18 @@ class IngredientInRecipeSerializer(serializers.ModelSerializer):
         required_fields = fields
         model = IngredientInRecipe
 
+    def create(self, validated_data):
+        try:
+            instance = IngredientInRecipe.objects.create(**validated_data)
+            return instance
+        except TypeError:
+            "Неверный формат записи ингридиентов!"
+
+    def update(self, instance, validated_data):
+        ingredient = IngredientInRecipe.objects.get(instance=instance)
+        if validated_data:
+            ingredient.save()
+
 
 class TagSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели тегов."""
@@ -105,6 +117,26 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
         required_fields = fields
         model = Tag
+
+    def create(self, validated_data):
+        try:
+            instance = Tag.objects.create(**validated_data)
+            return instance
+        except TypeError:
+            "Неверный тег!"
+
+    def update(self, instance, validated_data):
+        tag = Tag.objects.get(instance=instance)
+        if validated_data:
+            tag.save()
+
+
+class RecipeGetSerializer(serializers.ModelSerializer):
+    """Сериалайзер для модели рецептов."""
+
+    class Meta:
+        fields = '__all__'
+        model = Recipe
 
 
 class RecipeSerializer(serializers.ModelSerializer):
