@@ -12,12 +12,6 @@ def read_ingredients():
     path = os.path.join(dir, 'data', 'ingredients.json')
     with open(path, 'r', encoding='utf-8') as f:
         data = json.load(f)
-        print(">>>>>>>>")
-        print(data[0])
-
-        print(">>>>>>>>")
-        # reader = csv.reader(f, delimiter=',')
-        # for row in reader:
         for i in range(len(data)):
             Ingredient.objects.get_or_create(
                 id=i,

@@ -1,8 +1,11 @@
 from sqlite3 import IntegrityError
+# from weasyprint import HTML
+# from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer, TokenSerializer
 from djoser.social import token
+
 from rest_framework import (filters, status, serializers,
                             mixins, viewsets)
 from rest_framework.decorators import action
@@ -23,7 +26,7 @@ from .serializers import (
 )
 from recipes.models import Recipe, Ingredient, IngredientInRecipe, Tag
 from users.models import User
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly, IsAuthorOnly
 
 
 class UserViewSet(ModelViewSet):
@@ -41,7 +44,7 @@ class UserViewSet(ModelViewSet):
 
     @action(detail=True, methods=['get'],url_path='me',
             permission_classes=IsAuthenticated)
-    def me(self, request):
+    def profile(self, request):
         """Метод для просмотра личной информации."""
         serializer = UserGetSerializer(user=request.user)
         User.objects.get(request.user)
@@ -49,11 +52,11 @@ class UserViewSet(ModelViewSet):
 
     @action(detail=True, methods=['get'],
             permission_classes=[AllowAny])
-    def get_user(self):
+    def get_user_profile(self, request):
         """Метод просмотра информации о пользователе."""
-        serializer = UserGetSerializer
+        serializer = UserGetSerializer()
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(User, id=self.kwargs.get('user_id'))
+        user = User.objects.get_object_or_404(id=self.kwargs.get('user_id'))
         return Response(user.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'],
@@ -204,14 +207,13 @@ class FavoriteViewSet(mixins.CreateModelMixin,
     def perform_create(self, serializer):
         """Метод добавления рецепта в избранное."""
         serializer.save(user=self.request.user,
-                        recipe=self.get_queryset(),
-                        favorite_count=(self.favorite_count.count()))
+                        recipe=self.get_queryset())
 
 
 class ShoppingCartViewSet(ModelViewSet):
     """Вьюсет для просмотра, создания, списка продуктов для рецептов."""
     serializer_class = RecipeGetSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthorOnly,)
     filter_backends = (DjangoFilterBackend,)
 
     def get_queryset(self):
@@ -225,4 +227,9 @@ class ShoppingCartViewSet(ModelViewSet):
             shopping_cart.append(recipe.get('ingredients'))
         with open('shopping_cart.txt', 'w', encoding='utf-8') as file:
             file.write('\n'.join(map(str, shopping_cart)))
-        return Response('shopping_cart.txt', status=status.HTTP_200_OK)
+        return Response('shopping_list.txt', status=status.HTTP_200_OK)
+        # shopping_list = render_to_string(
+        #     "shopping_cart.html",
+        #     context={"shopping_cart": shopping_cart}
+        # )
+        # pdf_list = HTML('path_of_html').write_pdf()

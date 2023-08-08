@@ -8,7 +8,8 @@ class Ingredient(models.Model):
     """Модель просмотра, создания и удаления ингридиентов."""
     name = models.CharField(
         max_length=200,
-        verbose_name='Ингридиент'
+        verbose_name='Ингридиент',
+        unique=True
     )
     measurement_unit = models.CharField(
         max_length=200,

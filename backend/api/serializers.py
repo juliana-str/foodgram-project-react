@@ -159,7 +159,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
     image = Base64ImageField()
     ingredients = IngredientInRecipeSerializer(many=True)
-    tag = serializers.PrimaryKeyRelatedField(
+    tags = serializers.PrimaryKeyRelatedField(
         read_only=True,
         many=True
     )
