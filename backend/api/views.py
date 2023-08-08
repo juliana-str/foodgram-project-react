@@ -14,11 +14,11 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from .serializers import (
     SubscribeSerializer,
     UserGetSerializer,
-    UserCreateSerializer,
+    UserPostSerializer,
     FavoriteSerializer,
     IngredientSerializer,
     RecipeGetSerializer,
-    RecipeSerializer,
+    RecipePostSerializer,
     TagSerializer,
 )
 from recipes.models import Recipe, Ingredient, IngredientInRecipe, Tag
@@ -32,13 +32,14 @@ class UserViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('username', 'email')
     lookup_field = "username"
+    http_method_names = ["get", "post", "patch", "delete"]
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return UserGetSerializer
-        return UserCreateSerializer
+        return UserPostSerializer
 
-    @action(detail=True, methods=['get'],
+    @action(detail=True, methods=['get'],url_path='me',
             permission_classes=IsAuthenticated)
     def me(self, request):
         """Метод для просмотра личной информации."""
@@ -50,16 +51,16 @@ class UserViewSet(ModelViewSet):
             permission_classes=[AllowAny])
     def get_user(self):
         """Метод просмотра информации о пользователе."""
-        serializer = UserGetSerializer()
+        serializer = UserGetSerializer
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(User, pk=self.kwargs.get('user_id'))
+        user = get_object_or_404(User, id=self.kwargs.get('user_id'))
         return Response(user.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'],
             permission_classes=AllowAny)
     def user_create(self, request):
         """Метод для регистрации пользователей."""
-        serializer = UserCreateSerializer(data=request.data)
+        serializer = UserPostSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data["username"]
         email = serializer.validated_data["email"]
@@ -78,9 +79,9 @@ class UserViewSet(ModelViewSet):
         """Метод получения токена."""
         serializer = TokenSerializer()
         serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data["username"]
+        email = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
-        user = get_object_or_404(User, username=username, password=password)
+        user = get_object_or_404(User, email=email, password=password)
         if user:
             return Response({"token": token}, status=status.HTTP_200_OK)
         raise serializers.ValidationError("Введены неверные данные.")
@@ -132,7 +133,7 @@ class IngredientViewSet(mixins.ListModelMixin,
     def get_ingredient(self):
         """Метод получения определенного ингредиента."""
         return get_object_or_404(Ingredient,
-                                 pk=self.kwargs.get('ingredient_id'))
+                                 id=self.kwargs.get('ingredient_id'))
 
 
 class TagViewSet(mixins.ListModelMixin,
@@ -148,36 +149,43 @@ class TagViewSet(mixins.ListModelMixin,
         return get_object_or_404(Tag, pk=self.kwargs.get('tag_id'))
 
 
-class RecipeListViewSet(mixins.ListModelMixin,
-                        mixins.RetrieveModelMixin,
-                        GenericViewSet):
+class RecipeViewSet(ModelViewSet):
     """Вьюсет для просмотра рецептов."""
     queryset = Recipe.objects.all()
-    serializer_class = RecipeGetSerializer
     permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
+    http_method_names = ["get", "post", "patch", "delete"]
 
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return RecipeGetSerializer
+        return RecipePostSerializer
+
+    @action(detail=True, methods=['get'],
+            permission_classes=[AllowAny])
     def get_recipe(self):
-        """Метод получения определенного рецепта."""
-        return get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
+        """Метод просмотра информации о рецепте."""
+        serializer = RecipeGetSerializer
+        serializer.is_valid(raise_exception=True)
+        recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
+        return Response(recipe.data, status=status.HTTP_200_OK)
 
-
-class RecipeViewSet(mixins.CreateModelMixin,
-                    mixins.DestroyModelMixin,
-                    mixins.UpdateModelMixin,
-                    GenericViewSet):
-    """Вьюсет для создания, изменения, удаления рецептов."""
-    serializer_class = RecipeSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
-
-    def get_queryset(self):
-        """Метод получения определенного рецепта."""
-        return get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
-
-    def perform_create(self, serializer):
-        """Метод создания рецепта."""
-        serializer.save(author=self.request.user)
+    @action(detail=True, methods=['post', 'patch', 'delete'],
+            permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
+    def recipe_create(self, request):
+        """Метод для сoздания, редактирования, удаления рецепта."""
+        serializer = RecipePostSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        image = serializer.validated_data["image"]
+        ingredients = serializer.validated_data["ingredients"]
+        tag = serializer.validated_data["tag"]
+        Recipe.objects.get_or_create(
+            author=request.user,
+            image=image,
+            ingredients=ingredients,
+            tag=tag
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FavoriteViewSet(mixins.CreateModelMixin,
@@ -188,7 +196,6 @@ class FavoriteViewSet(mixins.CreateModelMixin,
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('following__username',)
-    favorite_count = 0
 
     def get_queryset(self):
         """Метод получения определенного рецепта."""
@@ -198,21 +205,24 @@ class FavoriteViewSet(mixins.CreateModelMixin,
         """Метод добавления рецепта в избранное."""
         serializer.save(user=self.request.user,
                         recipe=self.get_queryset(),
-                        favorite_count=(self.favorite_count+1))
+                        favorite_count=(self.favorite_count.count()))
 
 
 class ShoppingCartViewSet(ModelViewSet):
     """Вьюсет для просмотра, создания, списка продуктов для рецептов."""
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeGetSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        return Recipe.objects.filter(is_in_shopping_cart=True).all()
 
     def create_shopping_cart(self):
         """Метод создания списка покупок."""
         shopping_cart = []
-        recipes = Recipe.objects.filter(is_in_shopping_cart=True).all()
+        recipes = self.get_queryset()
         for recipe in recipes:
             shopping_cart.append(recipe.get('ingredients'))
         with open('shopping_cart.txt', 'w', encoding='utf-8') as file:
-            file.write('\n'.join(map(str,shopping_cart)))
+            file.write('\n'.join(map(str, shopping_cart)))
         return Response('shopping_cart.txt', status=status.HTTP_200_OK)
