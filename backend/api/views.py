@@ -6,7 +6,6 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer, TokenSerializer
-from djoser.social import token
 
 from rest_framework import (filters, status, serializers,
                             mixins, viewsets)
@@ -23,7 +22,7 @@ from .serializers import (
     FavoriteSerializer,
     IngredientSerializer,
     RecipeGetSerializer,
-    RecipePostSerializer,
+    RecipePostUpdateSerializer,
     TagSerializer,
 )
 from recipes.models import (
@@ -98,7 +97,6 @@ class UserViewSet(ModelViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-
 @action(detail=True, methods=['post'],
         permission_classes=IsAuthenticated)
 def token_login(request):
@@ -107,30 +105,13 @@ def token_login(request):
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data["email"]
     password = serializer.validated_data["password"]
-
-    # data = request.data
-    #
-    # try:
-    #     username = data['username']
-    #     password = data['password']
-    # except:
-    #     return Response(status=status.HTTP_400_BAD_REQUEST)
-
     try:
         user = User.objects.get(email=email, password=password)
     except:
         return Response(status=status.HTTP_401_UNAUTHORIZED)
-
     user_token = user.auth_token.key
-
     data = {'token': user_token}
     return Response(data=data, status=status.HTTP_200_OK)
-
-    # user = get_object_or_404(User, email=email, password=password)
-    # if user:
-    #     return Response({"token": token}, status=status.HTTP_200_OK)
-    # raise serializers.ValidationError("Введены неверные данные
-
 
 @action(detail=True, methods=['post'],
         permission_classes=IsAuthenticated)
@@ -140,6 +121,13 @@ def token_logout(request):
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data["email"]
     password = serializer.validated_data["password"]
+    try:
+        user = User.objects.get(email=email, password=password)
+    except:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    user_token = user.auth_token.key
+    user_token.destroy()
+    return Response('Вы успешно вышли из системы.', status=status.HTTP_200_OK)
 
 
 class SubscribeViewSet(mixins.ListModelMixin,
@@ -200,7 +188,7 @@ class RecipeViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeGetSerializer
-        return RecipePostSerializer
+        return RecipePostUpdateSerializer
 
     @action(detail=True, methods=['get'],
             permission_classes=[AllowAny])
@@ -215,17 +203,17 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
     def recipe_create(self, request):
         """Метод для сoздания, редактирования, удаления рецепта."""
-        serializer = RecipePostSerializer(data=request.data)
+        serializer = RecipePostUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if request.method in ['post', 'pach']:
             image = serializer.validated_data["image"]
             ingredients = serializer.validated_data["ingredients"]
-            tag = serializer.validated_data["tag"]
+            tags = serializer.validated_data["tag"]
             Recipe.objects.get_or_create(
                 author=request.user,
                 image=image,
                 ingredients=ingredients,
-                tag=tag
+                tags=tags
             )
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

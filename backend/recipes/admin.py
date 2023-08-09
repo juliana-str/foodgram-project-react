@@ -23,7 +23,7 @@ class Recipe(admin.ModelAdmin):
         'text',
         'cooking_time',
     )
-    search_fields = ('name', 'tag')
+    search_fields = ('name', 'tags')
 
 
 admin.site.register(Ingredient)
