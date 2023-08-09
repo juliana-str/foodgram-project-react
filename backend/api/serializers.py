@@ -127,16 +127,18 @@ class TagSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели тегов."""
 
     class Meta:
-        fields = '__all__'
+        fields = ('name', 'slug', 'color')
         required_fields = fields
         model = Tag
 
     def create(self, validated_data):
-        try:
-            instance = Tag.objects.create(**validated_data)
-            return instance
-        except TypeError:
-            "Неверный тег!"
+        name = validated_data.pop('name')
+        slug = validated_data.pop('slug')
+        color = validated_data.pop('color')
+        tag = Tag.objects.create(name=name,
+                                 slug=slug,
+                                 color=color)
+        return tag
 
     def update(self, instance, validated_data):
         tag = Tag.objects.get(instance=instance)
