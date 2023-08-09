@@ -234,13 +234,11 @@ class RecipeViewSet(ModelViewSet):
             recipe.delete()
             return Response('Рецепт успешно удален.', status=status.HTTP_200_OK)
 
-
     @action(detail=False, methods=['post', 'delete'],
         permission_classes=(IsAuthenticated,))
     def favorite(self, request):
         """Метод для создания и удаления рецептов из избранного."""
         serializer = FavoriteSerializer
-        search_fields = ('following__username',)
         if request.method == 'post':
             favorite_recipe = get_object_or_404(
                 Recipe, pk=self.kwargs.get('recipe_id')
@@ -251,7 +249,7 @@ class RecipeViewSet(ModelViewSet):
         else:
             favorite_recipe = get_object_or_404(
                 Favorite, id=self.kwargs.get('recipe_id'))
-            recipe.delete()
+            favorite_recipe.delete()
             return Response('Рецепт успешно удален из избранного.',
                             status=status.HTTP_200_OK)
 
@@ -286,15 +284,7 @@ class RecipeViewSet(ModelViewSet):
     #         permission_classes=(IsAuthorOnly,))
     # def create_shopping_cart(self):
     #     """Метод для создания, удаления списка продуктов для рецептов."""
-    #     serializer = RecipePostSerializer
 
-        # shopping_cart = []
-        # recipes = self.get_queryset()
-        # for recipe in recipes:
-        #     shopping_cart.append(recipe.get('ingredients'))
-        # with open('shopping_cart.txt', 'w', encoding='utf-8') as file:
-        #     file.write('\n'.join(map(str, shopping_cart)))
-        # return Response('shopping_list.txt', status=status.HTTP_200_OK)
         # shopping_list = render_to_string(
         #     "shopping_cart.html",
         #     context={"shopping_cart": shopping_cart}
