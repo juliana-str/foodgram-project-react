@@ -1,6 +1,8 @@
 from sqlite3 import IntegrityError
 # from weasyprint import HTML
 # from django.template.loader import render_to_string
+from django.db.models import Sum, F
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer, TokenSerializer
@@ -24,8 +26,14 @@ from .serializers import (
     RecipePostSerializer,
     TagSerializer,
 )
-from recipes.models import Recipe, Ingredient, IngredientInRecipe, Tag
-from users.models import User
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    Tag
+)
+from users.models import Subscribe, User
 from .permissions import IsAuthorOrReadOnly, IsAuthorOnly
 
 
@@ -42,7 +50,7 @@ class UserViewSet(ModelViewSet):
             return UserGetSerializer
         return UserPostSerializer
 
-    @action(detail=True, methods=['get'],url_path='me',
+    @action(detail=True, methods=['get'], url_path='me',
             permission_classes=IsAuthenticated)
     def profile(self, request):
         """Метод для просмотра личной информации."""
@@ -78,19 +86,6 @@ class UserViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post'],
             permission_classes=IsAuthenticated)
-    def token_create(request):
-        """Метод получения токена."""
-        serializer = TokenSerializer()
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data["email"]
-        password = serializer.validated_data["password"]
-        user = get_object_or_404(User, email=email, password=password)
-        if user:
-            return Response({"token": token}, status=status.HTTP_200_OK)
-        raise serializers.ValidationError("Введены неверные данные.")
-
-    @action(detail=True, methods=['post'],
-            permission_classes=IsAuthenticated)
     def set_password(self, request):
         """Метод для смены пароля."""
         user = self.get_object()
@@ -102,6 +97,49 @@ class UserViewSet(ModelViewSet):
         else:
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+@action(detail=True, methods=['post'],
+        permission_classes=IsAuthenticated)
+def token_login(request):
+    """Метод получения токена."""
+    serializer = TokenSerializer()
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data["email"]
+    password = serializer.validated_data["password"]
+
+    # data = request.data
+    #
+    # try:
+    #     username = data['username']
+    #     password = data['password']
+    # except:
+    #     return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(email=email, password=password)
+    except:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    user_token = user.auth_token.key
+
+    data = {'token': user_token}
+    return Response(data=data, status=status.HTTP_200_OK)
+
+    # user = get_object_or_404(User, email=email, password=password)
+    # if user:
+    #     return Response({"token": token}, status=status.HTTP_200_OK)
+    # raise serializers.ValidationError("Введены неверные данные
+
+
+@action(detail=True, methods=['post'],
+        permission_classes=IsAuthenticated)
+def token_logout(request):
+    """Метод удаления токена."""
+    serializer = TokenSerializer()
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data["email"]
+    password = serializer.validated_data["password"]
 
 
 class SubscribeViewSet(mixins.ListModelMixin,
@@ -179,55 +217,84 @@ class RecipeViewSet(ModelViewSet):
         """Метод для сoздания, редактирования, удаления рецепта."""
         serializer = RecipePostSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        image = serializer.validated_data["image"]
-        ingredients = serializer.validated_data["ingredients"]
-        tag = serializer.validated_data["tag"]
-        Recipe.objects.get_or_create(
-            author=request.user,
-            image=image,
-            ingredients=ingredients,
-            tag=tag
+        if request.method in ['post', 'pach']:
+            image = serializer.validated_data["image"]
+            ingredients = serializer.validated_data["ingredients"]
+            tag = serializer.validated_data["tag"]
+            Recipe.objects.get_or_create(
+                author=request.user,
+                image=image,
+                ingredients=ingredients,
+                tag=tag
+            )
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
+            recipe.delete()
+            return Response('Рецепт успешно удален.', status=status.HTTP_200_OK)
+
+
+    @action(detail=False, methods=['post', 'delete'],
+        permission_classes=(IsAuthenticated,))
+    def favorite(self, request):
+        """Метод для создания и удаления рецептов из избранного."""
+        serializer = FavoriteSerializer
+        search_fields = ('following__username',)
+        if request.method == 'post':
+            favorite_recipe = get_object_or_404(
+                Recipe, pk=self.kwargs.get('recipe_id')
+            )
+            serializer.save(user=self.request.user,
+                            recipe=favorite_recipe)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            favorite_recipe = get_object_or_404(
+                Favorite, id=self.kwargs.get('recipe_id'))
+            recipe.delete()
+            return Response('Рецепт успешно удален из избранного.',
+                            status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'],
+            permission_classes=(IsAuthenticated, IsAuthorOnly,))
+    def download_shopping_cart(self, request):
+        """Метод для просмотра списка покупок."""
+        items = IngredientInRecipe.objects.select_related(
+            'recipe', 'ingredient'
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        items = items.filter(
+            recipe__shopping_carts__user=request.user
+        )
+        items = items.values(
+            'ingredient__name', 'ingredient__measurement_unit'
+        ).annotate(
+            name=F('ingredient__name'),
+            units=F('ingredient__measurement_unit'),
+            total=Sum('amount'),
+        ).order_by('-total')
 
+        text = '\n'.join([
+                f"{item['name']} ({item['units']}) - {items['total']}"
+                for item in items
+        ])
+        filename = 'foodgram_shopping_cart.txt'
+        response = HttpResponse(text, content_type='text/plan')
+        response['Content-Disposition'] = f'attachment; filename={filename}'
+        return response
 
-class FavoriteViewSet(mixins.CreateModelMixin,
-                      mixins.DestroyModelMixin,
-                      GenericViewSet):
-    """Вьюсет для создания и удаления рецептов из избранного."""
-    serializer_class = FavoriteSerializer
-    permission_classes = (IsAuthenticated,)
-    filter_backends = (DjangoFilterBackend,)
-    search_fields = ('following__username',)
+    # @action(detail=False, methods=['post', 'delete'],
+    #         permission_classes=(IsAuthorOnly,))
+    # def create_shopping_cart(self):
+    #     """Метод для создания, удаления списка продуктов для рецептов."""
+    #     serializer = RecipePostSerializer
 
-    def get_queryset(self):
-        """Метод получения определенного рецепта."""
-        return get_object_or_404(Recipe, pk=self.kwargs.get('recipe_id'))
-
-    def perform_create(self, serializer):
-        """Метод добавления рецепта в избранное."""
-        serializer.save(user=self.request.user,
-                        recipe=self.get_queryset())
-
-
-class ShoppingCartViewSet(ModelViewSet):
-    """Вьюсет для просмотра, создания, списка продуктов для рецептов."""
-    serializer_class = RecipeGetSerializer
-    permission_classes = (IsAuthorOnly,)
-    filter_backends = (DjangoFilterBackend,)
-
-    def get_queryset(self):
-        return Recipe.objects.filter(is_in_shopping_cart=True).all()
-
-    def create_shopping_cart(self):
-        """Метод создания списка покупок."""
-        shopping_cart = []
-        recipes = self.get_queryset()
-        for recipe in recipes:
-            shopping_cart.append(recipe.get('ingredients'))
-        with open('shopping_cart.txt', 'w', encoding='utf-8') as file:
-            file.write('\n'.join(map(str, shopping_cart)))
-        return Response('shopping_list.txt', status=status.HTTP_200_OK)
+        # shopping_cart = []
+        # recipes = self.get_queryset()
+        # for recipe in recipes:
+        #     shopping_cart.append(recipe.get('ingredients'))
+        # with open('shopping_cart.txt', 'w', encoding='utf-8') as file:
+        #     file.write('\n'.join(map(str, shopping_cart)))
+        # return Response('shopping_list.txt', status=status.HTTP_200_OK)
         # shopping_list = render_to_string(
         #     "shopping_cart.html",
         #     context={"shopping_cart": shopping_cart}
