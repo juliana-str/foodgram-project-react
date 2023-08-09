@@ -17,7 +17,7 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ['-name']
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
 
