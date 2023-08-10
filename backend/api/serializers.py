@@ -3,7 +3,7 @@ from drf_base64.fields import Base64ImageField
 from rest_framework.fields import CurrentUserDefault
 
 from recipes.models import (
-    Favorite, Ingredient, IngredientInRecipe, Tag, Recipe
+    Favorite, Ingredient, IngredientInRecipe, Tag, Recipe, Shopping_cart
 )
 from users.models import Subscribe, User
 from .validators import validate_username
@@ -49,7 +49,7 @@ class UserPostSerializer(serializers.ModelSerializer):
         model = User
 
 
-class SubscribeSerializer(serializers.ModelSerializer):
+class SubscriptionsSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели подписок на авторов.."""
     following = serializers.SlugRelatedField(
         slug_field='username',
@@ -127,8 +127,7 @@ class TagSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели тегов."""
 
     class Meta:
-        fields = ('name', 'slug', 'color')
-        required_fields = fields
+        fields = '__all__'
         model = Tag
 
     def create(self, validated_data):
@@ -164,7 +163,7 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     ingredients = IngredientInRecipeSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
-        read_only=True,
+        queryset=Tag.objects.all(),
         many=True
     )
 
@@ -240,13 +239,13 @@ class FavoriteSerializer(serializers.ModelSerializer):
                 self.context.get('favorite_count')).count()
 
 
-class Shopping_cart(serializers.ModelSerializer):
+class Shopping_cartSerializer(serializers.ModelSerializer):
     """Сериалайзер для списка покупок."""
     ingredients_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         fields = ('ingredients_in_shopping_cart')
-        model = IngredientInRecipe
+        model = Shopping_cart
 
     def get_ingredients_in_shopping_cart(self):
         shopping_cart = IngredientInRecipe.objects.select_related(

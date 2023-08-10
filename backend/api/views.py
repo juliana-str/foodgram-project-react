@@ -1,4 +1,5 @@
-# from sqlite3 import IntegrityError
+from sqlite3 import IntegrityError
+
 from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -14,7 +15,7 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .serializers import (
-    SubscribeSerializer,
+    SubscriptionsSerializer,
     UserGetSerializer,
     UserPostSerializer,
     FavoriteSerializer,
@@ -105,7 +106,9 @@ def token_login(request):
     email = serializer.validated_data["email"]
     password = serializer.validated_data["password"]
     try:
-        user = User.objects.get(email=email, password=password)
+        user = User.objects.get(email=email,
+                                password=password,
+                                is_active=True)
     except:
         return Response(status=status.HTTP_401_UNAUTHORIZED)
     user_token = user.auth_token.key
@@ -134,7 +137,7 @@ class SubscribeViewSet(mixins.ListModelMixin,
                        mixins.DestroyModelMixin,
                        viewsets.GenericViewSet):
     """Вьюсет для просмотра, создания подписки на авторов."""
-    serializer_class = SubscribeSerializer
+    serializer_class = SubscriptionsSerializer
     permission_classes = (IsAuthenticated,)
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('following__username',)
@@ -146,7 +149,6 @@ class SubscribeViewSet(mixins.ListModelMixin,
     def perform_create(self, serializer):
         """Метод создания подписки на автора."""
         serializer.save(user=self.request.user)
-
 
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,))
@@ -174,11 +176,13 @@ class IngredientViewSet(mixins.ListModelMixin,
 
 class TagViewSet(mixins.ListModelMixin,
                  mixins.RetrieveModelMixin,
+                 mixins.CreateModelMixin,
                  GenericViewSet):
     """Вьюсет для просмотра тегов."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = (AllowAny,)
+    pagination_class = None
 
     def get_tag(self):
         """Метод получения определенного тега."""
@@ -188,7 +192,6 @@ class TagViewSet(mixins.ListModelMixin,
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для просмотра рецептов."""
     queryset = Recipe.objects.all()
-    permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
     http_method_names = ["get", "post", "patch", "delete"]
 
@@ -208,7 +211,7 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'patch', 'delete'],
             permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
-    def recipe_create(self, request):
+    def recipe_create_update_delete(self, request):
         """Метод для сoздания, редактирования, удаления рецепта."""
         serializer = RecipePostUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -229,7 +232,7 @@ class RecipeViewSet(ModelViewSet):
             recipe.delete()
             return Response('Рецепт успешно удален.', status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post', 'delete'],
+    @action(detail=True, methods=['post', 'delete'],
         permission_classes=(IsAuthenticated,))
     def favorite(self, request):
         """Метод для создания и удаления рецептов из избранного."""

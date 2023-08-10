@@ -65,6 +65,8 @@ class Recipe(models.Model):
     tags = models.ForeignKey(
         Tag,
         on_delete=models.CASCADE,
+        related_name='recipes',
+        verbose_name='Теги'
     )
     ingredients = models.ManyToManyField(
         Ingredient,
@@ -148,3 +150,27 @@ class Favorite(models.Model):
             )
         ]
 
+
+class Shopping_cart(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='shopping_user',
+        verbose_name='Добавил в корзину'
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='shopping_recipe',
+        verbose_name='Рецепт в корзине'
+    )
+
+    class Meta:
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзина'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_shopping_cart'
+            )
+        ]
