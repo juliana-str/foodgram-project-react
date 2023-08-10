@@ -23,14 +23,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    command: cp -r /app/build/. /static/
     volumes:
-      - ./frontend/:/app/result_build/
+      - static:/static
 
-  nginx:
+  gateway:
+    build: ./infra/
     image: nginx:1.19.3
     env_file: .env
     ports:
-      - "8000:80"
+      - 8000:80
     volumes:
       - static:/static
       - media:/app/media
