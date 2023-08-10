@@ -191,7 +191,6 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         recipe.tag.set(*tags)
-
         ingredients_recipe = [
             IngredientInRecipe.objects.create(
                 ingredient=ingredient['ingredient'],
@@ -221,7 +220,6 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
             for ingredient in ingredients
         ]
         IngredientInRecipe.objects.bulk_create(ingredients_recipe)
-
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
@@ -240,3 +238,16 @@ class FavoriteSerializer(serializers.ModelSerializer):
         if self.context.get('favorite_count'):
             return Favorite.objects.filter(
                 self.context.get('favorite_count')).count()
+
+
+class Shopping_cart(serializers.ModelSerializer):
+    """Сериалайзер для списка покупок."""
+    ingredients_in_shopping_cart = serializers.SerializerMethodField(
+        queryset=IngredientInRecipe.objects.select_related(
+            'recipe', 'ingredient'
+        )
+    )
+
+    class Meta:
+        fields = ('ingredients_in_shopping_cart')
+        model = IngredientInRecipe

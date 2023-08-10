@@ -1,5 +1,4 @@
 from sqlite3 import IntegrityError
-# from weasyprint import HTML
 # from django.template.loader import render_to_string
 from django.db.models import Sum, F
 from django.http import HttpResponse
@@ -24,6 +23,7 @@ from .serializers import (
     RecipeGetSerializer,
     RecipePostUpdateSerializer,
     TagSerializer,
+    Shopping_cart,
 )
 from recipes.models import (
     Favorite,
@@ -148,6 +148,19 @@ class SubscribeViewSet(mixins.ListModelMixin,
         """Метод создания подписки на автора."""
         serializer.save(user=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        """Метод для удаления подписки на автора."""
+
+
+
+
+    @action(detail=False, methods=['get'],
+            permission_classes=(IsAuthenticated,))
+    def subscriptions(self, request):
+        queryset = User.objects.filter(
+            subscribed_by__user=self.request.user).all()
+        return queryset
+
 
 class IngredientViewSet(mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,
@@ -251,7 +264,7 @@ class RecipeViewSet(ModelViewSet):
         items = items.filter(
             recipe__shopping_carts__user=request.user
         )
-        items = items.values(
+        shopping_cart = items.values(
             'ingredient__name', 'ingredient__measurement_unit'
         ).annotate(
             name=F('ingredient__name'),
@@ -261,20 +274,26 @@ class RecipeViewSet(ModelViewSet):
 
         text = '\n'.join([
                 f"{item['name']} ({item['units']}) - {items['total']}"
-                for item in items
+                for item in shopping_cart
         ])
         filename = 'foodgram_shopping_cart.txt'
         response = HttpResponse(text, content_type='text/plan')
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
-    # @action(detail=False, methods=['post', 'delete'],
-    #         permission_classes=(IsAuthorOnly,))
-    # def create_shopping_cart(self):
-    #     """Метод для создания, удаления списка продуктов для рецептов."""
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=(IsAuthorOnly,))
+    def shopping_cart(self, request, pk=None):
+        """Метод для создания, удаления списка продуктов для рецептов."""
+        serializer = Shopping_cart
+        if request.method == 'post':
+            serializer.save(user=self.request.user,
+                            shopping_cart=self.shopping_cart)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            favorite_recipe = get_object_or_404(
+                Favorite, id=self.kwargs.get('recipe_id'))
+            favorite_recipe.delete()
+            return Response('Рецепт успешно удален из избранного.',
+                            status=status.HTTP_200_OK)
 
-        # shopping_list = render_to_string(
-        #     "shopping_cart.html",
-        #     context={"shopping_cart": shopping_cart}
-        # )
-        # pdf_list = HTML('path_of_html').write_pdf()
