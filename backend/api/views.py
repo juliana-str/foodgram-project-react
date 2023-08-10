@@ -1,5 +1,4 @@
 from sqlite3 import IntegrityError
-# from django.template.loader import render_to_string
 from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
