@@ -31,8 +31,8 @@ services:
     build: ./infra/
     image: nginx:1.19.3
     env_file: .env
-    ports:
-      - 8000:80
     volumes:
       - static:/static
       - media:/app/media
+    ports:
+      - 8000:80
