@@ -290,3 +290,4 @@ class RecipeViewSet(ModelViewSet):
             favorite_recipe.delete()
             return Response('Рецепт успешно удален из избранного.',
                             status=status.HTTP_200_OK)
+
