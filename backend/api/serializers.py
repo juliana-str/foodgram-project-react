@@ -242,12 +242,14 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 class Shopping_cart(serializers.ModelSerializer):
     """Сериалайзер для списка покупок."""
-    ingredients_in_shopping_cart = serializers.SerializerMethodField(
-        queryset=IngredientInRecipe.objects.select_related(
-            'recipe', 'ingredient'
-        )
-    )
+    ingredients_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         fields = ('ingredients_in_shopping_cart')
         model = IngredientInRecipe
+
+    def get_ingredients_in_shopping_cart(self):
+        shopping_cart = IngredientInRecipe.objects.select_related(
+            'recipe', 'ingredient'
+        )
+        return shopping_cart

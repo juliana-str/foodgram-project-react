@@ -147,11 +147,6 @@ class SubscribeViewSet(mixins.ListModelMixin,
         """Метод создания подписки на автора."""
         serializer.save(user=self.request.user)
 
-    def destroy(self, request, *args, **kwargs):
-        """Метод для удаления подписки на автора."""
-
-
-
 
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated,))
@@ -295,4 +290,3 @@ class RecipeViewSet(ModelViewSet):
             favorite_recipe.delete()
             return Response('Рецепт успешно удален из избранного.',
                             status=status.HTTP_200_OK)
-
