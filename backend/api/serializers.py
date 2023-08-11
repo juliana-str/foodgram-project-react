@@ -137,19 +137,21 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Tag
 
-    # def create(self, validated_data):
-    #     name = validated_data.pop('name')
-    #     slug = validated_data.pop('slug')
-    #     color = validated_data.pop('color')
-    #     tag = Tag.objects.create(name=name,
-    #                              slug=slug,
-    #                              color=color)
-    #     return tag
-    #
-    # def update(self, instance, validated_data):
-    #     tag = Tag.objects.get(instance=instance)
-    #     if validated_data:
-    #         tag.save()
+    @transaction.atomic
+    def create(self, validated_data):
+        name = validated_data.pop('name')
+        slug = validated_data.pop('slug')
+        color = validated_data.pop('color')
+        tag = Tag.objects.create(name=name,
+                                 slug=slug,
+                                 color=color)
+        return tag
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        tag = Tag.objects.get(instance=instance)
+        if validated_data:
+            tag.save()
 
 
 class RecipeGetSerializer(serializers.ModelSerializer):
