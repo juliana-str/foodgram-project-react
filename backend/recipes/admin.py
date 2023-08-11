@@ -1,20 +1,31 @@
 from django.contrib import admin
 
-from recipes.models import IngredientInRecipe, Ingredient, Recipe, Tag
+from recipes.models import (
+    IngredientInRecipe,
+    Ingredient,
+    Recipe,
+    Tag,
+    Shopping_cart
+)
+
+
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'measurement_unit')
+    list_filter = ('name', )
+    search_fields = ('name', )
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'color', 'slug')
+    list_editable = ('name', 'color', 'slug')
 
 
 @admin.register(Recipe)
-class Recipe(admin.ModelAdmin):
-
-    def ingredients(self, recipe):
-        ingredients = []
-        for ingredient in recipe.ingredients.all():
-            ingredients.append(ingredient.name)
-        return ' '.join(ingredients)
-
-    ingredients.short_description = 'Ingredients'
-
+class RecipeAdmin(admin.ModelAdmin):
     list_display = (
+        'pk',
         'name',
         'author',
         'tags',
@@ -23,9 +34,20 @@ class Recipe(admin.ModelAdmin):
         'text',
         'cooking_time',
     )
-    search_fields = ('name', 'tags')
+    search_fields = ('name', 'author', 'tags')
+
+    def ingredients(self, recipe):
+        ingredients = []
+        for ingredient in recipe.ingredients.all():
+            ingredients.append(ingredient.name)
+        return ' '.join(ingredients)
+
+    def tags(self, recipe):
+        tags = []
+        for tag in recipe.tags.all():
+            tags.append(tag.name)
+        return ' '.join(tags)
 
 
-admin.site.register(Ingredient)
 admin.site.register(IngredientInRecipe)
-admin.site.register(Tag)
+admin.site.register(Shopping_cart)

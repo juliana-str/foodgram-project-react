@@ -50,9 +50,6 @@ class Tag(models.Model):
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
 
-    def __str__(self):
-        return self.name
-
 
 class Recipe(models.Model):
     """Модель просмотра, создания, редактирования и удаления рецептов."""
@@ -60,7 +57,8 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='recipes'
+        related_name='recipes',
+        verbose_name='Автор'
     )
     tags = models.ForeignKey(
         Tag,
@@ -84,8 +82,6 @@ class Recipe(models.Model):
         verbose_name='Дата публикации',
         auto_now_add=True
     )
-    is_favorited = models.BooleanField(null=True)
-    is_in_shopping_cart = models.BooleanField(null=True)
 
     class Meta:
         ordering = ['-pub_date']
@@ -101,7 +97,8 @@ class IngredientInRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredients'
+        related_name='ingredients',
+        verbose_name='Ингредиент'
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
@@ -110,7 +107,10 @@ class IngredientInRecipe(models.Model):
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='recipes',
+        verbose_name='Рецепт'
+
     )
 
     class Meta:

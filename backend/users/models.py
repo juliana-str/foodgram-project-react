@@ -5,7 +5,6 @@ from django.db.models import Q, F
 
 class User(AbstractUser):
     """Модель просмотра, создания и удаления пользователей."""
-
     is_subscribed = models.BooleanField(
         null=True
     )
@@ -13,14 +12,14 @@ class User(AbstractUser):
     class Meta:
         ordering = ('id',)
 
-    def create(self, validated_data):
-        user = User(
-            email=validated_data['email'],
-            username=validated_data['username']
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
+    # def create(self, validated_data):
+    #     user = User(
+    #         email=validated_data['email'],
+    #         username=validated_data['username']
+    #     )
+    #     user.set_password(validated_data['password'])
+    #     user.save()
+    #     return user
 
     def __str__(self):
         return self.username

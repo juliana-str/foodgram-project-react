@@ -26,3 +26,8 @@ def validate_amount(value):
     return value
 
 
+def validate_ingredients(value):
+    if len(value) < 1:
+        raise ValidationError('Нужно добавить ингредиент!')
+    return value
+

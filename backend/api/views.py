@@ -5,9 +5,11 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer, TokenSerializer
+from djoser.views import UserViewSet
 
 from rest_framework import (filters, status, serializers,
                             mixins, viewsets)
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -23,7 +25,7 @@ from .serializers import (
     RecipeGetSerializer,
     RecipePostUpdateSerializer,
     TagSerializer,
-    Shopping_cart,
+    Shopping_cartSerializer,
 )
 from recipes.models import (
     Favorite,
@@ -36,7 +38,7 @@ from users.models import Subscribe, User
 from .permissions import IsAuthorOrReadOnly, IsAuthorOnly
 
 
-class UserViewSet(ModelViewSet):
+class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователей."""
     queryset = User.objects.all()
     filter_backends = (DjangoFilterBackend,)
@@ -49,88 +51,92 @@ class UserViewSet(ModelViewSet):
             return UserGetSerializer
         return UserPostSerializer
 
-    @action(detail=True, methods=['get'], url_path='me',
-            permission_classes=IsAuthenticated)
-    def profile(self, request):
-        """Метод для просмотра личной информации."""
-        serializer = UserGetSerializer(user=request.user)
-        User.objects.get(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+    # @action(detail=False, methods=['get'],
+    #         pagination_class=None,
+    #         permission_classes=(IsAuthenticated,))
+    # def me(self, request):
+    #     """Метод для просмотра личной информации."""
+    #     serializer = UserGetSerializer(user=request.user)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
+    #
     @action(detail=True, methods=['get'],
             permission_classes=[AllowAny])
-    def get_user_profile(self, request):
+    def get_user(self, request):
         """Метод просмотра информации о пользователе."""
-        serializer = UserGetSerializer()
+        serializer = UserGetSerializer(id=request.data)
         serializer.is_valid(raise_exception=True)
-        user = User.objects.get_object_or_404(id=self.kwargs.get('user_id'))
+        user = User.objects.get_object_or_404(id=id)
         return Response(user.data, status=status.HTTP_200_OK)
+    #
+    # @action(detail=True, methods=['post'],
+    #         permission_classes=AllowAny)
+    # def user_create(self, request):
+    #     """Метод для регистрации пользователей."""
+    #     serializer = UserPostSerializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     username = serializer.validated_data["username"]
+    #     email = serializer.validated_data["email"]
+    #     try:
+    #         User.objects.get_or_create(
+    #             username=username, email=email)
+    #     except IntegrityError:
+    #         raise serializers.ValidationError(
+    #             "Данные имя пользователя или Email уже зарегистрированы"
+    #         )
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'],
-            permission_classes=AllowAny)
-    def user_create(self, request):
-        """Метод для регистрации пользователей."""
-        serializer = UserPostSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data["username"]
-        email = serializer.validated_data["email"]
-        try:
-            User.objects.get_or_create(
-                username=username, email=email)
-        except IntegrityError:
-            raise serializers.ValidationError(
-                "Данные имя пользователя или Email уже зарегистрированы"
-            )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    # @action(detail=True, methods=['post'],
+    #         permission_classes=IsAuthenticated)
+    # def set_password(self, request):
+    #     """Метод для смены пароля."""
+    #     user = self.get_object()
+    #     serializer = PasswordSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         user.set_password(serializer.validated_data['password'])
+    #         user.save()
+    #         return Response({'status': 'Пароль успешно сменен.'})
+    #     else:
+    #         return Response(serializer.errors,
+    #                         status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'],
-            permission_classes=IsAuthenticated)
-    def set_password(self, request):
-        """Метод для смены пароля."""
-        user = self.get_object()
-        serializer = PasswordSerializer(data=request.data)
-        if serializer.is_valid():
-            user.set_password(serializer.validated_data['password'])
-            user.save()
-            return Response({'status': 'Пароль успешно сменен.'})
-        else:
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
+# @action(detail=True, methods=['post'],
+#         permission_classes=IsAuthenticated)
+# def create_token(request):
+#     """Метод получения токена."""
+#     serializer = TokenSerializer(data=request.data)
+#     serializer.is_valid(raise_exception=True)
+#     email = serializer.validated_data["email"]
+#     password = serializer.validated_data["password"]
+#     try:
+#         user = User.objects.get(email=email,
+#                                 password=password,
+#                                 is_authenticated=True,
+#                                 is_active=True)
+#     except:
+#         return Response(status=status.HTTP_401_UNAUTHORIZED)
+#
+#     token, created = Token.objects.get_or_create(user=user)
+#
+#     data = {'token': token}
+#     return Response(data=data, status=status.HTTP_200_OK)
 
-@action(detail=True, methods=['post'],
-        permission_classes=IsAuthenticated)
-def token_login(request):
-    """Метод получения токена."""
-    serializer = TokenSerializer()
-    serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data["email"]
-    password = serializer.validated_data["password"]
-    try:
-        user = User.objects.get(email=email,
-                                password=password,
-                                is_active=True)
-    except:
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
-    user_token = user.auth_token.key
-    data = {'token': user_token}
-    return Response(data=data, status=status.HTTP_200_OK)
 
-@action(detail=True, methods=['post'],
-        permission_classes=IsAuthenticated)
-def token_logout(request):
-    """Метод удаления токена."""
-    serializer = TokenSerializer()
-    serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data["email"]
-    password = serializer.validated_data["password"]
-    try:
-        user = User.objects.get(email=email, password=password)
-    except:
-        return Response(status=status.HTTP_401_UNAUTHORIZED)
-    user_token = user.auth_token.key
-    user_token.destroy()
-    return Response('Вы успешно вышли из системы.', status=status.HTTP_200_OK)
-
+# @action(detail=True, methods=['post'],
+#         permission_classes=IsAuthenticated)
+# def token_logout(request):
+#     """Метод удаления токена."""
+#     serializer = TokenSerializer()
+#     serializer.is_valid(raise_exception=True)
+#     email = serializer.validated_data["email"]
+#     password = serializer.validated_data["password"]
+#     try:
+#         user = User.objects.get(email=email, password=password)
+#     except:
+#         return Response(status=status.HTTP_401_UNAUTHORIZED)
+#     user_token = user.auth_token.key
+#     user_token.destroy()
+#     return Response('Вы успешно вышли из системы.', status=status.HTTP_200_OK)
+#
 
 class SubscribeViewSet(mixins.ListModelMixin,
                        mixins.CreateModelMixin,
@@ -200,7 +206,7 @@ class RecipeViewSet(ModelViewSet):
             return RecipeGetSerializer
         return RecipePostUpdateSerializer
 
-    @action(detail=True, methods=['get'],
+    @action(detail=False, methods=['get'],
             permission_classes=[AllowAny])
     def get_recipe(self):
         """Метод просмотра информации о рецепте."""
@@ -218,7 +224,7 @@ class RecipeViewSet(ModelViewSet):
         if request.method in ['post', 'pach']:
             image = serializer.validated_data["image"]
             ingredients = serializer.validated_data["ingredients"]
-            tags = serializer.validated_data["tag"]
+            tags = serializer.validated_data["tags"]
             Recipe.objects.get_or_create(
                 author=request.user,
                 image=image,
@@ -282,7 +288,7 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=(IsAuthorOnly,))
     def shopping_cart(self, request, pk=None):
         """Метод для создания, удаления списка продуктов для рецептов."""
-        serializer = Shopping_cart
+        serializer = Shopping_cartSerializer
         if request.method == 'post':
             serializer.save(user=self.request.user,
                             shopping_cart=self.shopping_cart)
