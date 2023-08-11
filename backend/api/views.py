@@ -36,12 +36,14 @@ from recipes.models import (
 )
 from users.models import Subscribe, User
 from .permissions import IsAuthorOrReadOnly, IsAuthorOnly
+from .pagination import CustomPaginator
 
 
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователей."""
     queryset = User.objects.all()
     filter_backends = (DjangoFilterBackend,)
+    pagination_class = CustomPaginator
     search_fields = ('username', 'email')
     lookup_field = "username"
     http_method_names = ["get", "post", "patch", "delete"]
@@ -138,7 +140,7 @@ class CustomUserViewSet(UserViewSet):
 #     return Response('Вы успешно вышли из системы.', status=status.HTTP_200_OK)
 #
 
-class SubscribeViewSet(mixins.ListModelMixin,
+class SubscriptionViewSet(mixins.ListModelMixin,
                        mixins.CreateModelMixin,
                        mixins.DestroyModelMixin,
                        viewsets.GenericViewSet):
@@ -171,6 +173,7 @@ class IngredientViewSet(mixins.ListModelMixin,
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
+    pagination_class = CustomPaginator
     filter_backends = (filters.SearchFilter, )
     search_fields = ('^name', )
 

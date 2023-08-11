@@ -198,6 +198,8 @@ class RecipeGetSerializer(serializers.ModelSerializer):
                 user=self.context['request'].user,
                 recipe=obj).exists()
         )
+
+
     #
     # def to_representation(self, instance):
     #     return RecipeGetSerializer(instance).data
