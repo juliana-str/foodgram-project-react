@@ -8,18 +8,10 @@ class User(AbstractUser):
     is_subscribed = models.BooleanField(
         null=True
     )
+    REQUIRED_FIELDS = ['email', 'password']
 
     class Meta:
         ordering = ('id',)
-
-    # def create(self, validated_data):
-    #     user = User(
-    #         email=validated_data['email'],
-    #         username=validated_data['username']
-    #     )
-    #     user.set_password(validated_data['password'])
-    #     user.save()
-    #     return user
 
     def __str__(self):
         return self.username

@@ -1,10 +1,12 @@
 from sqlite3 import IntegrityError
 
+from django.conf import settings
 from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import PasswordSerializer, TokenSerializer
+from djoser.social import token
 from djoser.views import UserViewSet
 
 from rest_framework import (filters, status, serializers,
@@ -17,8 +19,8 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .serializers import (
-    SubscriptionsSerializer,
-    UserGetSerializer,
+    SubscribeSerializer,
+    CustomUserSerializer,
     UserPostSerializer,
     FavoriteSerializer,
     IngredientSerializer,
@@ -46,107 +48,55 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPaginator
     search_fields = ('username', 'email')
     lookup_field = "username"
-    http_method_names = ["get", "post", "patch", "delete"]
+    http_method_names = ["get", "post"]
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
-            return UserGetSerializer
+            return CustomUserSerializer
         return UserPostSerializer
 
-    # @action(detail=False, methods=['get'],
-    #         pagination_class=None,
-    #         permission_classes=(IsAuthenticated,))
-    # def me(self, request):
-    #     """Метод для просмотра личной информации."""
-    #     serializer = UserGetSerializer(user=request.user)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
-    #
-    @action(detail=True, methods=['get'],
+    @action(detail=False, methods=['get'],
+            pagination_class=None,
+            permission_classes=(IsAuthenticated,))
+    def me(self, request):
+        """Метод для просмотра личной информации."""
+        serializer = CustomUserSerializer(user=request.user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'],
+            pagination_class=None,
             permission_classes=[AllowAny])
-    def get_user(self, request):
+    def get_current_user(self, request):
         """Метод просмотра информации о пользователе."""
-        serializer = UserGetSerializer(id=request.data)
+        serializer = CustomUserSerializer(id=request.data)
         serializer.is_valid(raise_exception=True)
-        user = User.objects.get_object_or_404(id=id)
-        return Response(user.data, status=status.HTTP_200_OK)
-    #
-    # @action(detail=True, methods=['post'],
-    #         permission_classes=AllowAny)
-    # def user_create(self, request):
-    #     """Метод для регистрации пользователей."""
-    #     serializer = UserPostSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     username = serializer.validated_data["username"]
-    #     email = serializer.validated_data["email"]
-    #     try:
-    #         User.objects.get_or_create(
-    #             username=username, email=email)
-    #     except IntegrityError:
-    #         raise serializers.ValidationError(
-    #             "Данные имя пользователя или Email уже зарегистрированы"
-    #         )
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
+        # user = get_object_or_404(User, pk=self.kwargs.get('user_id'))
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     # @action(detail=True, methods=['post'],
     #         permission_classes=IsAuthenticated)
-    # def set_password(self, request):
-    #     """Метод для смены пароля."""
-    #     user = self.get_object()
-    #     serializer = PasswordSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         user.set_password(serializer.validated_data['password'])
-    #         user.save()
-    #         return Response({'status': 'Пароль успешно сменен.'})
-    #     else:
-    #         return Response(serializer.errors,
-    #                         status=status.HTTP_400_BAD_REQUEST)
+    # def token_create(request):
+    #     """Метод получения токена."""
+    #     serializer = TokenSerializer()
+    #     serializer.is_valid(raise_exception=True)
+    #     email = serializer.validated_data["email"]
+    #     password = serializer.validated_data["password"]
+    #     user = get_object_or_404(User, email=email,
+    #                              password=password)
+    #     if user:
+    #         return Response({"token": token},
+    #                          status=status.HTTP_200_OK)
+    #     raise serializers.ValidationError("Введены неверные данные.")
 
-# @action(detail=True, methods=['post'],
-#         permission_classes=IsAuthenticated)
-# def create_token(request):
-#     """Метод получения токена."""
-#     serializer = TokenSerializer(data=request.data)
-#     serializer.is_valid(raise_exception=True)
-#     email = serializer.validated_data["email"]
-#     password = serializer.validated_data["password"]
-#     try:
-#         user = User.objects.get(email=email,
-#                                 password=password,
-#                                 is_authenticated=True,
-#                                 is_active=True)
-#     except:
-#         return Response(status=status.HTTP_401_UNAUTHORIZED)
-#
-#     token, created = Token.objects.get_or_create(user=user)
-#
-#     data = {'token': token}
-#     return Response(data=data, status=status.HTTP_200_OK)
-
-
-# @action(detail=True, methods=['post'],
-#         permission_classes=IsAuthenticated)
-# def token_logout(request):
-#     """Метод удаления токена."""
-#     serializer = TokenSerializer()
-#     serializer.is_valid(raise_exception=True)
-#     email = serializer.validated_data["email"]
-#     password = serializer.validated_data["password"]
-#     try:
-#         user = User.objects.get(email=email, password=password)
-#     except:
-#         return Response(status=status.HTTP_401_UNAUTHORIZED)
-#     user_token = user.auth_token.key
-#     user_token.destroy()
-#     return Response('Вы успешно вышли из системы.', status=status.HTTP_200_OK)
-#
 
 class SubscriptionViewSet(mixins.ListModelMixin,
                        mixins.CreateModelMixin,
                        mixins.DestroyModelMixin,
                        viewsets.GenericViewSet):
     """Вьюсет для просмотра, создания подписки на авторов."""
-    serializer_class = SubscriptionsSerializer
+    serializer_class = SubscribeSerializer
     permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('following__username',)
 
@@ -154,16 +104,32 @@ class SubscriptionViewSet(mixins.ListModelMixin,
         """Метод получения определенного автора."""
         return self.request.user.follower.all()
 
-    def perform_create(self, serializer):
+    def perform_create(self, request):
         """Метод создания подписки на автора."""
-        serializer.save(user=self.request.user)
+        serializer = SubscribeSerializer(
+            author=request.author, data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        Subscribe.objects.create(user=request.user, author=request.author)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED)
+
+    def perform_destroy(self, request):
+        get_object_or_404(Subscribe, user=request.user,
+                          author=request.author).delete()
+        return Response({'detail': 'Успешная отписка'},
+                        status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
-            permission_classes=(IsAuthenticated,))
+            permission_classes=(IsAuthenticated,),
+            pagination_class=CustomPaginator)
     def subscriptions(self, request):
+        """Метод получения всех подписок."""
         queryset = User.objects.filter(
             subscribed_by__user=self.request.user).all()
-        return queryset
+        page = self.paginate_queryset(queryset)
+        serializer = SubscribeSerializer(page, many=True,
+                                             context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
 
 class IngredientViewSet(mixins.ListModelMixin,
@@ -201,6 +167,7 @@ class TagViewSet(mixins.ListModelMixin,
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для просмотра рецептов."""
     queryset = Recipe.objects.all()
+    pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
     http_method_names = ["get", "post", "patch", "delete"]
 
@@ -218,28 +185,28 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
         return Response(recipe.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post', 'patch', 'delete'],
-            permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
-    def recipe_create_update_delete(self, request):
-        """Метод для сoздания, редактирования, удаления рецепта."""
-        serializer = RecipePostUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        if request.method in ['post', 'pach']:
-            image = serializer.validated_data["image"]
-            ingredients = serializer.validated_data["ingredients"]
-            tags = serializer.validated_data["tags"]
-            Recipe.objects.get_or_create(
-                author=request.user,
-                image=image,
-                ingredients=ingredients,
-                tags=tags
-            )
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
-            recipe.delete()
-            return Response('Рецепт успешно удален.', status=status.HTTP_200_OK)
+    # @action(detail=True, methods=['post', 'patch', 'delete'],
+    #         permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
+    # def recipe_create_update_delete(self, request):
+    #     """Метод для сoздания, редактирования, удаления рецепта."""
+    #     serializer = RecipePostUpdateSerializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     if request.method in ['post', 'patch']:
+    #         image = serializer.validated_data["image"]
+    #         ingredients = serializer.validated_data["ingredients"]
+    #         tags = serializer.validated_data["tags"]
+    #         Recipe.objects.get_or_create(
+    #             author=request.user,
+    #             image=image,
+    #             ingredients=ingredients,
+    #             tags=tags
+    #         )
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     else:
+    #         recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
+    #         recipe.delete()
+    #         return Response('Рецепт успешно удален.', status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'],
         permission_classes=(IsAuthenticated,))

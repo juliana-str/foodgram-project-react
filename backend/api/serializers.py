@@ -1,6 +1,6 @@
 from django.db import transaction
-from requests import Response
-from rest_framework import serializers, status
+from djoser.serializers import UserSerializer, UserCreateSerializer
+from rest_framework import serializers
 from drf_base64.fields import Base64ImageField
 from rest_framework.fields import CurrentUserDefault
 
@@ -11,24 +11,37 @@ from users.models import Subscribe, User
 from .validators import validate_username, validate_ingredients
 
 
-class UserGetSerializer(serializers.ModelSerializer):
-    """Сериалайзер для модели пользователей. Просмотр."""
+class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
-    class Meta:
-        fields = ('id', 'email', 'username', 'first_name', 'last_name',
-                  'is_subscribed')
-        model = User
-
-    def get_is_subscribed(self,obj):
+    def get_is_subscribed(self, obj):
         if (self.context.get('request')
            and not self.context['request'].user.is_anonymous):
             return Subscribe.objects.filter(user=self.context['request'].user
                                             ).exists()
         return False
 
+    class Meta:
+        fields = ('id',
+                  'email',
+                  'username',
+                  'first_name',
+                  'last_name',
+                  'is_subscribed'
+                  )
+        model = User
 
-class UserPostSerializer(serializers.ModelSerializer):
+
+# class UserGetSerializer(UserCreateSerializer):
+#     """Сериалайзер для модели пользователей. Просмотр."""
+#
+#     class Meta:
+#         fields = ('id', 'email', 'username', 'first_name', 'last_name',
+#                   'is_subscribed')
+#         model = User
+
+
+class UserPostSerializer(UserCreateSerializer):
     """Сериалайзер для модели пользователей, создание, изменение, удаление."""
     username = serializers.CharField(
         max_length=150,
@@ -43,14 +56,17 @@ class UserPostSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         max_length=254,
     )
+    password = serializers.CharField(
+        max_length=150
+    )
 
     class Meta:
-        fields = ('id', 'email', 'username', 'first_name', 'last_name')
+        fields = ('email', 'username', 'first_name', 'last_name', 'password')
         required_fields = fields
         model = User
 
 
-class SubscriptionsSerializer(serializers.ModelSerializer):
+class SubscribeSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели подписок на авторов.."""
     following = serializers.SlugRelatedField(
         slug_field='username',
@@ -156,7 +172,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 class RecipeGetSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
-    author = UserGetSerializer(read_only=True)
+    author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
@@ -199,19 +215,13 @@ class RecipeGetSerializer(serializers.ModelSerializer):
                 recipe=obj).exists()
         )
 
-
-    #
     # def to_representation(self, instance):
     #     return RecipeGetSerializer(instance).data
-
-    # def to_representation(self, instance):
-    #     return RecipeGetSerializer(instance,
-    #                                context=self.context).data
 
 
 class RecipePostUpdateSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
-    author = UserGetSerializer(read_only=True)
+    # author = UserGetSerializer(read_only=True)
     image = Base64ImageField()
     ingredients = IngredientInRecipeSerializer(
         many=True,
@@ -240,7 +250,7 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
-        recipe.tags.set(*tags)
+        recipe.tags.add(*tags)
         ingredients_recipe = [
             IngredientInRecipe.objects.create(
                 ingredient=ingredient['ingredient'],
@@ -254,14 +264,12 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        instance.name = validated_data.pop('name', instance.name)
-        instance.image = validated_data.pop('image', instance.image)
-        instance.text = validated_data.pop('text', instance.text)
-        instance.cooking_time = validated_data.pop(
-            'cooking_time', instance.cooking_time)
-        tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        instance.tags.set(*tags)
+        tags = validated_data.pop('tags')
+        if tags is not None:
+            instance.tags.set(*tags)
+        if ingredients is not None:
+            instance.ingredients.clear()
         ingredients_recipe = [
             IngredientInRecipe.objects.create(
                 ingredient=ingredient['ingredient'],
@@ -273,8 +281,8 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
         IngredientInRecipe.objects.bulk_create(ingredients_recipe)
         return super().update(instance, validated_data)
 
-    def to_representation(self, instance):
-        return RecipePostUpdateSerializer(instance).data
+    # def to_representation(self, instance):
+    #     return RecipePostUpdateSerializer(instance).data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

@@ -12,7 +12,7 @@ from .views import (
 app_name = 'api'
 
 router = DefaultRouter()
-router.register(r'users', CustomUserViewSet, basename='users')
+router.register('users', CustomUserViewSet, basename='users')
 router.register(r'ingredients', IngredientViewSet, basename='ingredients')
 router.register(r'tags', TagViewSet, basename='tags')
 router.register(r'recipes', RecipeViewSet, basename='recipes')
@@ -21,5 +21,5 @@ router.register(r'users/subscriptions', SubscriptionViewSet, basename='subscript
 urlpatterns = [
         path('', include(router.urls)),
         path('', include('djoser.urls')),
-        path(r'auth/', include('djoser.urls.authtoken')),
+        path('auth/', include('djoser.urls.authtoken')),
 ]
