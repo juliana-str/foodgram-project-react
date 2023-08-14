@@ -8,7 +8,6 @@ class User(AbstractUser):
     is_subscribed = models.BooleanField(
         null=True
     )
-    REQUIRED_FIELDS = ['email', 'password']
 
     class Meta:
         ordering = ('id',)
