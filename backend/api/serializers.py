@@ -32,13 +32,17 @@ class CustomUserSerializer(UserSerializer):
         model = User
 
 
-# class UserGetSerializer(UserCreateSerializer):
-#     """Сериалайзер для модели пользователей. Просмотр."""
-#
-#     class Meta:
-#         fields = ('id', 'email', 'username', 'first_name', 'last_name',
-#                   'is_subscribed')
-#         model = User
+class UserGetSerializer(UserCreateSerializer):
+
+    class Meta:
+        fields = ('id',
+                  'email',
+                  'username',
+                  'first_name',
+                  'last_name',
+                  'is_subscribed'
+                  )
+        model = User
 
 
 class UserPostSerializer(UserCreateSerializer):
@@ -61,8 +65,13 @@ class UserPostSerializer(UserCreateSerializer):
     )
 
     class Meta:
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
-        required_fields = fields
+        fields = ('id',
+                  'email',
+                  'username',
+                  'first_name',
+                  'last_name',
+                  'password'
+                  )
         model = User
 
 
@@ -242,7 +251,14 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
                 'text',
                 'cooking_time'
         )
-        required_fields = fields
+        required_fields = (
+                'author',
+                'name',
+                'tags',
+                'ingredients',
+                'text',
+                'cooking_time'
+        )
         model = Recipe
 
     @transaction.atomic
@@ -289,14 +305,21 @@ class FavoriteSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели избранное."""
     favorite_count = serializers.SerializerMethodField()
 
-    class Meta:
-        fields = '__all__'
-        model = Favorite
-
     def get_favorite_count(self):
         if self.context.get('favorite_count'):
             return Favorite.objects.filter(
                 self.context.get('favorite_count')).count()
+
+    class Meta:
+        fields = '__all__'
+        model = Favorite
+        validators = (
+            serializers.UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('user', 'favorite_recipe'),
+                message='Вы уже добавили этот рецепт в избранное!'
+            ),
+        )
 
 
 class Shopping_cartSerializer(serializers.ModelSerializer):

@@ -5,12 +5,13 @@ from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.serializers import PasswordSerializer, TokenSerializer
+from djoser.serializers import PasswordSerializer, TokenSerializer, \
+    SetPasswordSerializer
 from djoser.social import token
 from djoser.views import UserViewSet
 
 from rest_framework import (filters, status, serializers,
-                            mixins, viewsets)
+                            mixins, viewsets, request)
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -21,6 +22,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from .serializers import (
     SubscribeSerializer,
     CustomUserSerializer,
+    UserGetSerializer,
     UserPostSerializer,
     FavoriteSerializer,
     IngredientSerializer,
@@ -47,49 +49,48 @@ class CustomUserViewSet(UserViewSet):
     filter_backends = (DjangoFilterBackend,)
     pagination_class = CustomPaginator
     search_fields = ('username', 'email')
-    lookup_field = "username"
-    http_method_names = ["get", "post"]
+    lookup_fields = ('name', 'id')
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
-            return CustomUserSerializer
+            return UserGetSerializer
         return UserPostSerializer
 
-    @action(detail=False, methods=['get'],
-            pagination_class=None,
-            permission_classes=(IsAuthenticated,))
-    def me(self, request):
-        """Метод для просмотра личной информации."""
-        serializer = CustomUserSerializer(user=request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'],
-            pagination_class=None,
-            permission_classes=[AllowAny])
-    def get_current_user(self, request):
-        """Метод просмотра информации о пользователе."""
-        serializer = CustomUserSerializer(id=request.data)
-        serializer.is_valid(raise_exception=True)
-        # user = get_object_or_404(User, pk=self.kwargs.get('user_id'))
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    # @action(detail=True, methods=['post'],
+    # @action(detail=False, methods=['post'],
     #         permission_classes=IsAuthenticated)
-    # def token_create(request):
-    #     """Метод получения токена."""
-    #     serializer = TokenSerializer()
-    #     serializer.is_valid(raise_exception=True)
-    #     email = serializer.validated_data["email"]
-    #     password = serializer.validated_data["password"]
-    #     user = get_object_or_404(User, email=email,
-    #                              password=password)
-    #     if user:
-    #         return Response({"token": token},
-    #                          status=status.HTTP_200_OK)
-    #     raise serializers.ValidationError("Введены неверные данные.")
+    # def set_password(self, validated_data):
+    #     """Метод для смены пароля."""
+    #
+    #
+    #     password=validated_data['current_password']
+    #     print('>>>>>>>>>>>>>')
+    #     user = User.objects.get(password=password,user=request.user)
+    #     user.set_password(validated_data['new_password'])
+    #     serializer = PasswordSerializer(validated_data)
+    #     if serializer.is_valid():
+    #         user.set_password(serializer.validated_data['password'])
+    #         user.save()
+    #         return Response({'status': 'Пароль успешно сменен.'})
+    #     else:
+    #         return Response(serializer.errors,
+    #                         status=status.HTTP_400_BAD_REQUEST)
+
+    #
+    # @action(detail=False, methods=['post'],
+    #         permission_classes=(IsAuthenticated,))
+    # def set_password(self, request):
+    #
+    #     serializer = PasswordSerializer(data=request.data)
+    #     print('>>>>>>>>>>>>>>>>>>>>>>>>')
+    #     if serializer.is_valid(raise_exception=True):
+    #         serializer.save()
+    #     return Response({'detail': 'Пароль успешно изменен!'},
+    #                     status=status.HTTP_204_NO_CONTENT)
 
 
-class SubscriptionViewSet(mixins.ListModelMixin,
+class SubscribeViewSet(mixins.ListModelMixin,
                        mixins.CreateModelMixin,
                        mixins.DestroyModelMixin,
                        viewsets.GenericViewSet):
