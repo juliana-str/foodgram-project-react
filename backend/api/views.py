@@ -82,7 +82,9 @@ class SubscribeViewSet(mixins.ListModelMixin,
     def perform_create(self, request):
         """Метод создания подписки на автора."""
         serializer = SubscribeSerializer(
-            author=request.author, data=request.data, context={"request": request})
+            author=request.author,
+            data=request.data,
+            context={"request": request})
         serializer.is_valid(raise_exception=True)
         Subscribe.objects.create(user=request.user, author=request.author)
         return Response(serializer.data,
