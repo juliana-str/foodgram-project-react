@@ -1,18 +1,14 @@
-from sqlite3 import IntegrityError
-
-from django.conf import settings
 from django.db.models import Sum, F
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from djoser.serializers import PasswordSerializer, TokenSerializer, \
-    SetPasswordSerializer
-from djoser.social import token
+from djoser.serializers import SetPasswordSerializer
+
 from djoser.views import UserViewSet
 
 from rest_framework import (filters, status, serializers,
                             mixins, viewsets, request)
-from rest_framework.authtoken.models import Token
+
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -21,7 +17,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .serializers import (
     SubscribeSerializer,
-    CustomUserSerializer,
+    # PasswordSetSerializer,
     UserGetSerializer,
     UserPostSerializer,
     FavoriteSerializer,
@@ -57,37 +53,28 @@ class CustomUserViewSet(UserViewSet):
             return UserGetSerializer
         return UserPostSerializer
 
-
+    #
     # @action(detail=False, methods=['post'],
-    #         permission_classes=IsAuthenticated)
-    # def set_password(self, validated_data):
-    #     """Метод для смены пароля."""
-    #
-    #
-    #     password=validated_data['current_password']
-    #     print('>>>>>>>>>>>>>')
-    #     user = User.objects.get(password=password,user=request.user)
-    #     user.set_password(validated_data['new_password'])
-    #     serializer = PasswordSerializer(validated_data)
-    #     if serializer.is_valid():
-    #         user.set_password(serializer.validated_data['password'])
-    #         user.save()
-    #         return Response({'status': 'Пароль успешно сменен.'})
-    #     else:
-    #         return Response(serializer.errors,
-    #                         status=status.HTTP_400_BAD_REQUEST)
+    #         permission_classes=(IsAuthenticated,))
+    # def set_password(self, request):
+    #     serializer = SetPasswordSerializer(request.user, data=request.data)
+    #     if serializer.is_valid(raise_exception=True):
+    #         serializer.save()
+    #     return Response({'detail': 'Пароль успешно изменен!'},
+    #                     status=status.HTTP_204_NO_CONTENT)
 
-    #
+
     # @action(detail=False, methods=['post'],
     #         permission_classes=(IsAuthenticated,))
     # def set_password(self, request):
     #
     #     serializer = PasswordSerializer(data=request.data)
-    #     print('>>>>>>>>>>>>>>>>>>>>>>>>')
-    #     if serializer.is_valid(raise_exception=True):
-    #         serializer.save()
+    #     serializer.is_valid(raise_exception=True)
+    #     print('>>>>>>>>>>>>>>>')
+    #     self.request.user.set_password(serializer.data["new_password"])
+    #     self.request.user.save()
     #     return Response({'detail': 'Пароль успешно изменен!'},
-    #                     status=status.HTTP_204_NO_CONTENT)
+    #                     status=status.HTTP_200_OK)
 
 
 class SubscribeViewSet(mixins.ListModelMixin,

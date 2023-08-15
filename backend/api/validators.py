@@ -31,3 +31,8 @@ def validate_ingredients(value):
         raise ValidationError('Нужно добавить ингредиент!')
     return value
 
+def validate_time(value):
+    if value < 1:
+        raise ValidationError(
+            'Время приготовления не может быть меньше 1 минуты')
+    return value

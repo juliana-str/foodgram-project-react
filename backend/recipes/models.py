@@ -1,6 +1,6 @@
 from django.db import models
 
-from api.validators import validate_slug, validate_amount
+from api.validators import validate_slug, validate_amount, validate_time
 from users.models import User
 
 
@@ -76,7 +76,8 @@ class Recipe(models.Model):
     text = models.TextField(verbose_name='Описание')
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления',
-        default=1
+        default=1,
+        validators=(validate_time,)
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации',

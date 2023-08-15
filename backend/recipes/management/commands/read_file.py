@@ -20,6 +20,19 @@ def read_ingredients():
             )
     print('Данные из файла ingredients.json загружены')
 
+    # dir = os.path.dirname(settings.BASE_DIR)
+    # path = os.path.join(dir, 'data', 'ingredients.cvs')
+    # with open(path, 'r', encoding='utf-8') as f:
+    #     reader = csv.reader(f, delimiter=',')
+    #     for row in reader:
+    #         if row[0] == 'id':
+    #             continue
+    #         Ingredient.objects.get_or_create(
+    #             id=row[0],
+    #             name=row[1],
+    #             measurment_unit=row[2]
+    #         )
+    # print('Данные из файла ingredients.csv загружены')
 
 class Command(BaseCommand):
 
