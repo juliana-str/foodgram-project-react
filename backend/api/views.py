@@ -53,28 +53,15 @@ class CustomUserViewSet(UserViewSet):
             return UserGetSerializer
         return UserPostSerializer
 
-    #
-    # @action(detail=False, methods=['post'],
-    #         permission_classes=(IsAuthenticated,))
-    # def set_password(self, request):
-    #     serializer = SetPasswordSerializer(request.user, data=request.data)
-    #     if serializer.is_valid(raise_exception=True):
-    #         serializer.save()
-    #     return Response({'detail': 'Пароль успешно изменен!'},
-    #                     status=status.HTTP_204_NO_CONTENT)
-
-
-    # @action(detail=False, methods=['post'],
-    #         permission_classes=(IsAuthenticated,))
-    # def set_password(self, request):
-    #
-    #     serializer = PasswordSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     print('>>>>>>>>>>>>>>>')
-    #     self.request.user.set_password(serializer.data["new_password"])
-    #     self.request.user.save()
-    #     return Response({'detail': 'Пароль успешно изменен!'},
-    #                     status=status.HTTP_200_OK)
+    @action(detail=False, methods=['post'],
+            permission_classes=(IsAuthenticated,))
+    def set_password(self, request):
+        serializer = SetPasswordSerializer(data=request.data,
+                                           context={'request': request})
+        if serializer.is_valid(raise_exception=True):
+            self.request.user.save()
+        return Response({'detail': 'Пароль успешно изменен!'},
+                        status=status.HTTP_204_NO_CONTENT)
 
 
 class SubscribeViewSet(mixins.ListModelMixin,

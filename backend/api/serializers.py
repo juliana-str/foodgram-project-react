@@ -1,5 +1,11 @@
+from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
-from djoser.serializers import UserSerializer, UserCreateSerializer
+from djoser.serializers import (
+    UserSerializer,
+    UserCreateSerializer,
+    PasswordSerializer
+)
+from requests import Response
 from rest_framework import serializers
 from drf_base64.fields import Base64ImageField
 from rest_framework.fields import CurrentUserDefault
@@ -73,6 +79,33 @@ class UserPostSerializer(UserCreateSerializer):
                   'password'
                   )
         model = User
+
+
+# class PasswordSetSerializer(PasswordSerializer):
+#     """Сериалайзер для модели пользователей, создание, изменение пароля."""
+#     new_password = serializers.CharField(max_length=150)
+#     current_password = serializers.CharField(max_length=150)
+#
+#     class Meta:
+#         fields = ('new_password', 'current_password')
+#         required_fields = fields
+#         model = User
+#
+#     def set_password(self, validated_data, request):
+#         """Метод для смены пароля."""
+#         serializer = PasswordSetSerializer(validated_data)
+#         password=validated_data['current_password']
+#         user = User.objects.get(password=password,user=request.user)
+#         if serializer.is_valid():
+#             user.set_password(serializer.validated_data['password'])
+#             user.save()
+#             return Response({'status': 'Пароль успешно сменен.'})
+#
+#     def validate_new_password(self):
+#         if self.new_password == self.current_password:
+#             raise serializers.ValidationError(
+#                 'Новый пароль должен отличаться от предыдущего!'
+#             )
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
@@ -194,6 +227,21 @@ class RecipeGetSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
+    def get_is_favorited(self, obj):
+        return (
+                self.context.get('request').user.is_authenticated
+                and Favorite.objects.filter(user=self.context['request'].user,
+                                            recipe=obj).exists()
+        )
+
+    def get_is_in_shopping_cart(self, obj):
+        return (
+                self.context.get('request').user.is_authenticated
+                and Shopping_cart.objects.filter(
+            user=self.context['request'].user,
+            recipe=obj).exists()
+        )
+
     class Meta:
         fields = (
                 'id',
@@ -209,28 +257,15 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         )
         model = Recipe
 
-    def get_is_favorited(self, obj):
-        return (
-            self.context.get('request').user.is_authenticated
-            and Favorite.objects.filter(user=self.context['request'].user,
-                                        recipe=obj).exists()
-        )
-
-    def get_is_in_shopping_cart(self, obj):
-        return (
-            self.context.get('request').user.is_authenticated
-            and Shopping_cart.objects.filter(
-                user=self.context['request'].user,
-                recipe=obj).exists()
-        )
-
+    #
     # def to_representation(self, instance):
     #     return RecipeGetSerializer(instance).data
 
 
+
 class RecipePostUpdateSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
-    # author = UserGetSerializer(read_only=True)
+    author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
     ingredients = IngredientInRecipeSerializer(
         many=True,
@@ -251,21 +286,15 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
                 'text',
                 'cooking_time'
         )
-        required_fields = (
-                'author',
-                'name',
-                'tags',
-                'ingredients',
-                'text',
-                'cooking_time'
-        )
+        required_fields = fields
         model = Recipe
 
     @transaction.atomic
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-        recipe = Recipe.objects.create(**validated_data)
+        recipe = Recipe.objects.create(**validated_data,
+                                       author=self.context['request'].user)
         recipe.tags.add(*tags)
         ingredients_recipe = [
             IngredientInRecipe.objects.create(
