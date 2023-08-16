@@ -226,26 +226,33 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         many=True,
         validators=(validate_ingredients,)
     )
-    # tags = serializers.PrimaryKeyRelatedField(
-    #     many=True,
-    #     queryset=Tag.objects.all()
-    # )
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Tag.objects.all()
+    )
 
     class Meta:
         model = Recipe
         exclude = ('pub_date',)
 
     @transaction.atomic
+    def tags_and_ingredients_set(self, recipe, tags, ingredients):
+        recipe.tags.set(tags)
+        IngredientInRecipe.objects.bulk_create(
+            [IngredientInRecipe(
+                recipe=recipe,
+                ingredient=Ingredient.objects.get(pk=ingredient['id']),
+                amount=ingredient['amount']
+            ) for ingredient in ingredients]
+        )
+
+    @transaction.atomic
     def create(self, validated_data):
-        print('111')
         ingredients = validated_data.pop('ingredients')
-        print('22222222')
         tags = validated_data.pop('tags')
-        print('33333333333')
         recipe = Recipe.objects.create(**validated_data,
                                        author=self.context['request'].user)
-        print('4444444')
-        recipe.tags.set(*tags)
+        self.tags_and_ingredients_set(recipe, tags, ingredients)
         ingredients_recipe = [
             IngredientInRecipe.objects.create(
                 ingredient=ingredient['ingredient'],
@@ -290,6 +297,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
 
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели избранное."""
+
     favorite_count = serializers.SerializerMethodField()
 
     def get_favorite_count(self):

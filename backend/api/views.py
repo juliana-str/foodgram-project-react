@@ -149,8 +149,6 @@ class RecipeViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeListSerializer
-        elif self.action in ('shopping_cart', 'favorite'):
-            return RecipeMinifiedSerializer
         return RecipeCreateUpdateSerializer
 
     @action(detail=False, methods=['get'],
