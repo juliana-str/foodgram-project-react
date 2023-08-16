@@ -33,18 +33,6 @@ class RecipeAdmin(admin.ModelAdmin):
     readonly_fields = ('favorite_count',)
     list_filter = ('name', 'author', 'tags')
 
-    # def ingredients(self, recipe):
-    #     ingredients = []
-    #     for ingredient in recipe.ingredients.all():
-    #         ingredients.append(ingredient.name)
-    #     return ' '.join(ingredients)
-    #
-    # def tags(self, recipe):
-    #     tags = []
-    #     for tag in recipe.tags.all():
-    #         tags.append(tag.name)
-    #     return ' '.join(tags)
-
     @admin.display(description='В избранном')
     def favorite_count(self, obj):
         return obj.favorite_recipe.count()
