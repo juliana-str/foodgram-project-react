@@ -22,8 +22,9 @@ from .serializers import (
     UserPostSerializer,
     FavoriteSerializer,
     IngredientSerializer,
-    RecipeGetSerializer,
-    RecipePostUpdateSerializer,
+    RecipeListSerializer,
+    RecipeMinifiedSerializer,
+    RecipeCreateUpdateSerializer,
     TagSerializer,
     Shopping_cartSerializer,
 )
@@ -147,28 +148,28 @@ class RecipeViewSet(ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
-            return RecipeGetSerializer
-        return RecipePostUpdateSerializer
+            return RecipeListSerializer
+        elif self.action in ('shopping_cart', 'favorite'):
+            return RecipeMinifiedSerializer
+        return RecipeCreateUpdateSerializer
 
     @action(detail=False, methods=['get'],
-            permission_classes=[AllowAny])
+        permission_classes=(AllowAny,))
     def get_recipe(self):
-        """Метод просмотра информации о рецепте."""
-        serializer = RecipeGetSerializer
-        serializer.is_valid(raise_exception=True)
-        recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
-        return Response(recipe.data, status=status.HTTP_200_OK)
+        if hasattr(self, 'recipe'):
+            return self.recipe
+        recipe = get_object_or_404(
+            Recipe, id=self.kwargs.get('recipe_id'))
+        return recipe
 
     @action(detail=True, methods=['post', 'delete'],
-        permission_classes=(IsAuthenticated,))
+        permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
     def favorite(self, request):
         """Метод для создания и удаления рецептов из избранного."""
         serializer = FavoriteSerializer
         if request.method == 'post':
-            favorite_recipe = get_object_or_404(
-                Recipe, pk=self.kwargs.get('recipe_id')
-            )
-            serializer.save(user=self.request.user,
+            favorite_recipe = self.get_recipe
+            serializer.save(user=request.user,
                             recipe=favorite_recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
@@ -220,4 +221,3 @@ class RecipeViewSet(ModelViewSet):
             favorite_recipe.delete()
             return Response('Рецепт успешно удален из избранного.',
                             status=status.HTTP_200_OK)
-

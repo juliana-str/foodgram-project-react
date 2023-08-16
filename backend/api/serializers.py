@@ -39,6 +39,7 @@ class CustomUserSerializer(UserSerializer):
 
 
 class UserGetSerializer(UserCreateSerializer):
+    """Сериалайзер для модели пользователей, просмотр."""
 
     class Meta:
         fields = ('id',
@@ -79,33 +80,6 @@ class UserPostSerializer(UserCreateSerializer):
                   'password'
                   )
         model = User
-
-
-# class PasswordSetSerializer(PasswordSerializer):
-#     """Сериалайзер для модели пользователей, создание, изменение пароля."""
-#     new_password = serializers.CharField(max_length=150)
-#     current_password = serializers.CharField(max_length=150)
-#
-#     class Meta:
-#         fields = ('new_password', 'current_password')
-#         required_fields = fields
-#         model = User
-#
-#     def set_password(self, validated_data, request):
-#         """Метод для смены пароля."""
-#         serializer = PasswordSetSerializer(validated_data)
-#         password=validated_data['current_password']
-#         user = User.objects.get(password=password,user=request.user)
-#         if serializer.is_valid():
-#             user.set_password(serializer.validated_data['password'])
-#             user.save()
-#             return Response({'status': 'Пароль успешно сменен.'})
-#
-#     def validate_new_password(self):
-#         if self.new_password == self.current_password:
-#             raise serializers.ValidationError(
-#                 'Новый пароль должен отличаться от предыдущего!'
-#             )
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
@@ -212,13 +186,10 @@ class TagSerializer(serializers.ModelSerializer):
             tag.save()
 
 
-class RecipeGetSerializer(serializers.ModelSerializer):
+class RecipeListSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(),
-        )
     ingredients = IngredientInRecipeSerializer(
         many=True,
         read_only=True,
@@ -243,27 +214,11 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         )
 
     class Meta:
-        fields = (
-                'id',
-                'name',
-                'tags',
-                'author',
-                'ingredients',
-                'image',
-                'text',
-                'cooking_time',
-                'is_favorited',
-                'is_in_shopping_cart'
-        )
         model = Recipe
-
-    #
-    # def to_representation(self, instance):
-    #     return RecipeGetSerializer(instance).data
+        exclude = ('pub_date',)
 
 
-
-class RecipePostUpdateSerializer(serializers.ModelSerializer):
+class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
@@ -271,31 +226,26 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
         many=True,
         validators=(validate_ingredients,)
     )
-    tags = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Tag.objects.all()
-    )
+    # tags = serializers.PrimaryKeyRelatedField(
+    #     many=True,
+    #     queryset=Tag.objects.all()
+    # )
 
     class Meta:
-        fields = (
-                'author',
-                'name',
-                'tags',
-                'ingredients',
-                'image',
-                'text',
-                'cooking_time'
-        )
-        required_fields = fields
         model = Recipe
+        exclude = ('pub_date',)
 
     @transaction.atomic
     def create(self, validated_data):
+        print('111')
         ingredients = validated_data.pop('ingredients')
+        print('22222222')
         tags = validated_data.pop('tags')
+        print('33333333333')
         recipe = Recipe.objects.create(**validated_data,
                                        author=self.context['request'].user)
-        recipe.tags.add(*tags)
+        print('4444444')
+        recipe.tags.set(*tags)
         ingredients_recipe = [
             IngredientInRecipe.objects.create(
                 ingredient=ingredient['ingredient'],
@@ -309,25 +259,33 @@ class RecipePostUpdateSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        ingredients = validated_data.pop('ingredients')
-        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients', None)
+        tags = validated_data.pop('tags', None)
         if tags is not None:
             instance.tags.set(*tags)
         if ingredients is not None:
             instance.ingredients.clear()
-        ingredients_recipe = [
-            IngredientInRecipe.objects.create(
-                ingredient=ingredient['ingredient'],
-                amount=ingredient['amount'],
-                recipe=instance
-            )
-            for ingredient in ingredients
-        ]
-        IngredientInRecipe.objects.bulk_create(ingredients_recipe)
+            ingredients_recipe = [
+                IngredientInRecipe(
+                    ingredient=ingredient['id'],
+                    amount=ingredient['amount'],
+                    recipe=instance
+                )
+                for ingredient in ingredients
+            ]
+            IngredientInRecipe.objects.bulk_create(ingredients_recipe)
         return super().update(instance, validated_data)
 
-    # def to_representation(self, instance):
-    #     return RecipePostUpdateSerializer(instance).data
+    def to_representation(self, instance):
+        return RecipeListSerializer(instance, context=self.context).data
+
+
+class RecipeMinifiedSerializer(serializers.ModelSerializer):
+    """Сериалайзер для модели рецепта."""
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

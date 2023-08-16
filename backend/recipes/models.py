@@ -9,7 +9,6 @@ class Ingredient(models.Model):
     name = models.CharField(
         max_length=200,
         verbose_name='Ингридиент',
-        unique=True
     )
     measurement_unit = models.CharField(
         max_length=200,
@@ -17,7 +16,7 @@ class Ingredient(models.Model):
     )
 
     class Meta:
-        ordering = ['-name']
+        ordering = ['name']
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
 
@@ -49,6 +48,9 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
