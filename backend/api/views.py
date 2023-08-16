@@ -15,9 +15,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import (AllowAny, IsAuthenticated)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
+from .filters import RecipeFilter
 from .serializers import (
     SubscribeSerializer,
-    # PasswordSetSerializer,
     UserGetSerializer,
     UserPostSerializer,
     FavoriteSerializer,
@@ -70,7 +70,7 @@ class SubscribeViewSet(mixins.ListModelMixin,
                        viewsets.GenericViewSet):
     """Вьюсет для просмотра, создания подписки на авторов."""
     serializer_class = SubscribeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('following__username',)
@@ -105,7 +105,7 @@ class SubscribeViewSet(mixins.ListModelMixin,
             subscribed_by__user=self.request.user).all()
         page = self.paginate_queryset(queryset)
         serializer = SubscribeSerializer(page, many=True,
-                                             context={'request': request})
+                                         context={'request': request})
         return self.get_paginated_response(serializer.data)
 
 
@@ -136,16 +136,13 @@ class TagViewSet(mixins.ListModelMixin,
     permission_classes = (AllowAny,)
     pagination_class = None
 
-    def get_tag(self):
-        """Метод получения определенного тега."""
-        return get_object_or_404(Tag, pk=self.kwargs.get('tag_id'))
-
 
 class RecipeViewSet(ModelViewSet):
     """Вьюсет для просмотра рецептов."""
     queryset = Recipe.objects.all()
     pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
     http_method_names = ["get", "post", "patch", "delete"]
 
     def get_serializer_class(self):
@@ -161,29 +158,6 @@ class RecipeViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
         return Response(recipe.data, status=status.HTTP_200_OK)
-
-    # @action(detail=True, methods=['post', 'patch', 'delete'],
-    #         permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
-    # def recipe_create_update_delete(self, request):
-    #     """Метод для сoздания, редактирования, удаления рецепта."""
-    #     serializer = RecipePostUpdateSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     if request.method in ['post', 'patch']:
-    #         image = serializer.validated_data["image"]
-    #         ingredients = serializer.validated_data["ingredients"]
-    #         tags = serializer.validated_data["tags"]
-    #         Recipe.objects.get_or_create(
-    #             author=request.user,
-    #             image=image,
-    #             ingredients=ingredients,
-    #             tags=tags
-    #         )
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-    #     else:
-    #         recipe = get_object_or_404(Recipe, id=self.kwargs.get('recipe_id'))
-    #         recipe.delete()
-    #         return Response('Рецепт успешно удален.', status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'],
         permission_classes=(IsAuthenticated,))
