@@ -288,7 +288,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
-    """Сериалайзер для модели рецепта."""
+    """Список рецептов без ингридиентов."""
 
     class Meta:
         model = Recipe
@@ -297,13 +297,6 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
 
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели избранное."""
-
-    favorite_count = serializers.SerializerMethodField()
-
-    def get_favorite_count(self):
-        if self.context.get('favorite_count'):
-            return Favorite.objects.filter(
-                self.context.get('favorite_count')).count()
 
     class Meta:
         fields = '__all__'

@@ -154,28 +154,33 @@ class RecipeViewSet(ModelViewSet):
     @action(detail=False, methods=['get'],
         permission_classes=(AllowAny,))
     def get_recipe(self):
-        if hasattr(self, 'recipe'):
-            return self.recipe
         recipe = get_object_or_404(
             Recipe, id=self.kwargs.get('recipe_id'))
         return recipe
 
     @action(detail=True, methods=['post', 'delete'],
-        permission_classes=(IsAuthenticated, IsAuthorOrReadOnly))
+            permission_classes=(IsAuthenticated, IsAuthorOnly))
     def favorite(self, request):
-        """Метод для создания и удаления рецептов из избранного."""
-        serializer = FavoriteSerializer
-        if request.method == 'post':
-            favorite_recipe = self.get_recipe
-            serializer.save(user=request.user,
-                            recipe=favorite_recipe)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            favorite_recipe = get_object_or_404(
-                Favorite, id=self.kwargs.get('recipe_id'))
-            favorite_recipe.delete()
-            return Response('Рецепт успешно удален из избранного.',
-                            status=status.HTTP_200_OK)
+        if request.method == 'POST':
+            serializer = RecipeMinifiedSerializer(
+                self.get_recipe,
+                data=request.data,
+                context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            if not Favorite.objects.filter(user=request.user,
+                                           recipe=self.get_recipe).exists():
+                Favorite.objects.create(
+                    user=request.user, recipe=self.get_recipe)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response({'errors': 'Рецепт уже в избранном.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        elif request.method == 'DELETE':
+            get_object_or_404(Favorite, user=request.user,
+                              recipe=self.get_recipe).delete()
+            return Response({'detail': 'Рецепт успешно удален из избранного.'},
+                            status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
             permission_classes=(IsAuthenticated, IsAuthorOnly,))

@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from recipes.models import (
+    Favorite,
     IngredientInRecipe,
     Ingredient,
     Recipe,
@@ -13,7 +14,7 @@ from recipes.models import (
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'measurement_unit')
     list_filter = ('name', )
-    search_fields = ('name', )
+    search_fields = ('^name', )
 
 
 @admin.register(Tag)
@@ -25,29 +26,28 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
-        'pk',
-        'name',
-        'author',
-        'tags',
-        'ingredients',
-        'image',
-        'text',
-        'cooking_time',
+            'pk', 'name', 'author', 'favorite_count',
+            'name', 'cooking_time', 'text', 'tags',
+            'image', 'author'
     )
-    search_fields = ('name', 'author', 'tags')
+    readonly_fields = ('favorite_count',)
+    list_filter = ('name', 'author', 'tags')
 
-    def ingredients(self, recipe):
-        ingredients = []
-        for ingredient in recipe.ingredients.all():
-            ingredients.append(ingredient.name)
-        return ' '.join(ingredients)
+    # def ingredients(self, recipe):
+    #     ingredients = []
+    #     for ingredient in recipe.ingredients.all():
+    #         ingredients.append(ingredient.name)
+    #     return ' '.join(ingredients)
+    #
+    # def tags(self, recipe):
+    #     tags = []
+    #     for tag in recipe.tags.all():
+    #         tags.append(tag.name)
+    #     return ' '.join(tags)
 
-    def tags(self, recipe):
-        tags = []
-        for tag in recipe.tags.all():
-            tags.append(tag.name)
-        return ' '.join(tags)
-
+    @admin.display(description='В избранном')
+    def favorite_count(self, obj):
+        return obj.favorite_recipe.count()
 
 admin.site.register(IngredientInRecipe)
 admin.site.register(Shopping_cart)
