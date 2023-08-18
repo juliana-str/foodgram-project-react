@@ -149,6 +149,8 @@ class RecipeViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeListSerializer
+        elif self.action == 'favorite':
+            return FavoriteSerializer
         return RecipeCreateUpdateSerializer
 
     @action(detail=False, methods=['get'],
@@ -159,11 +161,11 @@ class RecipeViewSet(ModelViewSet):
         return recipe
 
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=(IsAuthenticated, IsAuthorOnly))
+            permission_classes=(IsAuthenticated,))
     def favorite(self, request):
         if request.method == 'POST':
-            serializer = RecipeMinifiedSerializer(
-                self.get_recipe,
+            serializer = FavoriteSerializer(
+                self.get_recipe(),
                 data=request.data,
                 context={"request": request})
             serializer.is_valid(raise_exception=True)
@@ -175,7 +177,6 @@ class RecipeViewSet(ModelViewSet):
                                 status=status.HTTP_201_CREATED)
             return Response({'errors': 'Рецепт уже в избранном.'},
                             status=status.HTTP_400_BAD_REQUEST)
-
         elif request.method == 'DELETE':
             get_object_or_404(Favorite, user=request.user,
                               recipe=self.get_recipe).delete()
