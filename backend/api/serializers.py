@@ -129,11 +129,11 @@ class SubscribeSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Subscribe
         validators = (
-                serializers.UniqueTogetherValidator(
-                    queryset=Subscribe.objects.all(),
-                    fields=('user', 'author'),
-                    message='Вы уже подписаны на этого автора!'
-                ),
+            serializers.UniqueTogetherValidator(
+                queryset=Subscribe.objects.all(),
+                fields=('user', 'author'),
+                message='Вы уже подписаны на этого автора!'
+            ),
         )
 
     def validate_following(self, data):
@@ -240,17 +240,18 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         return (
-                self.context.get('request').user.is_authenticated
-                and Favorite.objects.filter(user=self.context['request'].user,
-                                            recipe=obj).exists()
+            self.context.get('request').user.is_authenticated
+            and Favorite.objects.filter(user=self.context['request'].user,
+                                        recipe=obj).exists()
         )
 
     def get_is_in_shopping_cart(self, obj):
         return (
-                self.context.get('request').user.is_authenticated
-                and ShoppingCart.objects.filter(
-                    user=self.context['request'].user,
-                    recipe=obj).exists()
+            self.context.get('request').user.is_authenticated
+            and ShoppingCart.objects.filter(
+                user=self.context['request'].user,
+                recipe=obj).exists()
+
         )
 
     class Meta:

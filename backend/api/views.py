@@ -8,7 +8,6 @@ from djoser.views import UserViewSet
 
 from rest_framework import (filters, status, mixins)
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.permissions import (AllowAny, IsAuthenticated)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
@@ -177,10 +176,10 @@ class RecipeViewSet(ModelViewSet):
             total=Sum('amount'),
         ).order_by('-total')
 
-        text = '\n'.join([
-                f"{item['name']} ({item['units']}) - {items['total']}"
-                for item in shopping_cart
-        ])
+        text = '\n'.join(
+            [f"{item['name']} ({item['units']}) - {items['total']}"
+             for item in shopping_cart]
+        )
         filename = 'foodgram_shopping_cart.txt'
         response = HttpResponse(text, content_type='text/plan')
         response['Content-Disposition'] = f'attachment; filename={filename}'
