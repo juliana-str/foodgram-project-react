@@ -7,7 +7,6 @@ from djoser.serializers import SetPasswordSerializer
 from djoser.views import UserViewSet
 
 from rest_framework import (filters, status, mixins)
-
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response

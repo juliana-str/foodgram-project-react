@@ -32,16 +32,14 @@ class TagAdmin(admin.ModelAdmin):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     inlines = (IngredientInline,)
-    list_display = (
-            'id',
-            'name',
-            'author',
-            'text',
-            'tags',
-            'image',
-            'favorite_count',
-            'cooking_time',
-    )
+    list_display = ('id',
+                    'name',
+                    'author',
+                    'text',
+                    'tags',
+                    'image',
+                    'favorite_count',
+                    'cooking_time')
     readonly_fields = ('favorite_count',)
     list_filter = ('name', 'author', 'tags')
 

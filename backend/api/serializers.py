@@ -7,7 +7,12 @@ from rest_framework import serializers
 from drf_base64.fields import Base64ImageField
 
 from recipes.models import (
-    Favorite, Ingredient, IngredientInRecipe, Tag, Recipe, ShoppingCart
+    Favorite,
+    Ingredient,
+    IngredientInRecipe,
+    Tag,
+    Recipe,
+    ShoppingCart
 )
 from users.models import Subscribe, User
 from .validators import validate_username, validate_ingredients
@@ -17,8 +22,7 @@ class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     def get_is_subscribed(self):
-        if (self.context.get('request') and
-                self.context['request'].user.is_authenticated):
+        if self.context['request'].user.is_authenticated:
             return Subscribe.objects.filter(
                 user=self.context['request'].user).exists()
         return False
@@ -244,7 +248,7 @@ class RecipeListSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         return (
                 self.context.get('request').user.is_authenticated
-                and Shopping_cart.objects.filter(
+                and ShoppingCart.objects.filter(
                     user=self.context['request'].user,
                     recipe=obj).exists()
         )
@@ -352,7 +356,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('ingredients_in_shopping_cart', 'user', 'recipe')
-        model = Shopping_cart
+        model = ShoppingCart
 
     def to_representation(self, instance):
         print(instance)
