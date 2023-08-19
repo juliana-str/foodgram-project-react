@@ -62,12 +62,11 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Автор'
     )
-    tags = models.ForeignKey(
+    tags = models.ManyToManyField(
         Tag,
-        on_delete=models.CASCADE,
-        related_name='recipes',
         verbose_name='Теги'
     )
+
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientInRecipe',
@@ -125,6 +124,12 @@ class IngredientInRecipe(models.Model):
                     name='unique_ingredients'
                 )
         ]
+
+    def __str__(self):
+        return (f'{self.recipe.name}: '
+                f'{self.ingredient.name} - '
+                f'{self.amount} '
+                f'{self.ingredient.measurement_unit}')
 
 
 class Favorite(models.Model):
