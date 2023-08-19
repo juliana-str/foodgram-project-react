@@ -6,8 +6,7 @@ from djoser.serializers import SetPasswordSerializer
 
 from djoser.views import UserViewSet
 
-from rest_framework import (filters, status, serializers,
-                            mixins, viewsets, request)
+from rest_framework import (filters, status, mixins)
 
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -25,7 +24,7 @@ from .serializers import (
     RecipeListSerializer,
     RecipeCreateUpdateSerializer,
     TagSerializer,
-    Shopping_cartSerializer
+    ShoppingCartSerializer
 )
 from recipes.models import (
     Favorite,
@@ -33,10 +32,10 @@ from recipes.models import (
     IngredientInRecipe,
     Recipe,
     Tag,
-    Shopping_cart
+    ShoppingCart
 )
 from users.models import Subscribe, User
-from .permissions import IsAuthorOrReadOnly, IsAuthorOnly
+from .permissions import IsAuthorOnly
 from .pagination import CustomPaginator
 
 
@@ -78,7 +77,7 @@ class CustomUserViewSet(UserViewSet):
                 context={"request": request})
             serializer.is_valid(raise_exception=True)
             if not Subscribe.objects.filter(user=user,
-                                           author=author).exists():
+                                            author=author).exists():
                 Subscribe.objects.create(user=user, author=author)
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
@@ -195,15 +194,15 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipe, id=kwargs['pk'])
         user = request.user
         if request.method == 'POST':
-            serializer = Shopping_cartSerializer(
+            serializer = ShoppingCartSerializer(
                 data={'user': user.id, 'recipe': recipe.id})
             serializer.is_valid(raise_exception=True)
-            if not Shopping_cart.objects.filter(user=user,
-                                           recipe=recipe).exists():
-                Shopping_cart.objects.create(user=user, recipe=recipe)
+            if not ShoppingCart.objects.filter(user=user,
+                                               recipe=recipe).exists():
+                ShoppingCart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             get_object_or_404(
-                Shopping_cart, recipe=recipe).delete()
+                ShoppingCart, recipe=recipe).delete()
             return Response({'detail': 'Список покупок успешно удален.'},
                             status=status.HTTP_200_OK)

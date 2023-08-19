@@ -71,7 +71,7 @@ class Recipe(models.Model):
         Ingredient,
         through='IngredientInRecipe',
         through_fields=('recipe', 'ingredient'),
-        verbose_name = 'Ингредиенты',
+        verbose_name='Ингредиенты',
     )
     image = models.ImageField(upload_to='recipes/media')
     text = models.TextField(verbose_name='Описание')
@@ -159,7 +159,7 @@ class Favorite(models.Model):
         ]
 
 
-class Shopping_cart(models.Model):
+class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

@@ -1,17 +1,13 @@
-from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from djoser.serializers import (
     UserSerializer,
     UserCreateSerializer,
-    PasswordSerializer
 )
-from requests import Response
 from rest_framework import serializers
 from drf_base64.fields import Base64ImageField
-from rest_framework.fields import CurrentUserDefault
 
 from recipes.models import (
-    Favorite, Ingredient, IngredientInRecipe, Tag, Recipe, Shopping_cart
+    Favorite, Ingredient, IngredientInRecipe, Tag, Recipe, ShoppingCart
 )
 from users.models import Subscribe, User
 from .validators import validate_username, validate_ingredients
@@ -20,11 +16,11 @@ from .validators import validate_username, validate_ingredients
 class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
-    def get_is_subscribed(self, obj):
-        if (self.context.get('request')
-             and not self.context['request'].user.is_anonymous):
-            return Subscribe.objects.filter(user=self.context['request'].user
-                                            ).exists()
+    def get_is_subscribed(self):
+        if (self.context.get('request') and
+                self.context['request'].user.is_authenticated):
+            return Subscribe.objects.filter(
+                user=self.context['request'].user).exists()
         return False
 
     class Meta:
@@ -249,8 +245,8 @@ class RecipeListSerializer(serializers.ModelSerializer):
         return (
                 self.context.get('request').user.is_authenticated
                 and Shopping_cart.objects.filter(
-            user=self.context['request'].user,
-            recipe=obj).exists()
+                    user=self.context['request'].user,
+                    recipe=obj).exists()
         )
 
     class Meta:
@@ -341,10 +337,10 @@ class FavoriteSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        return RecipeMinifiedSerializer(instance,context=self.context).data
+        return RecipeMinifiedSerializer(instance, context=self.context).data
 
 
-class Shopping_cartSerializer(serializers.ModelSerializer):
+class ShoppingCartSerializer(serializers.ModelSerializer):
     """Сериалайзер для списка покупок."""
     ingredients_in_shopping_cart = serializers.SerializerMethodField()
 
