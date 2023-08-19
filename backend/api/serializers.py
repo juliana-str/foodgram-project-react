@@ -22,7 +22,7 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         if (self.context.get('request')
-           and not self.context['request'].user.is_anonymous):
+             and not self.context['request'].user.is_anonymous):
             return Subscribe.objects.filter(user=self.context['request'].user
                                             ).exists()
         return False
@@ -83,6 +83,45 @@ class UserPostSerializer(UserCreateSerializer):
         model = User
 
 
+class SubscriptionsSerializer(serializers.ModelSerializer):
+    """Сериалайзер для списка авторов на которых подписан пользователь."""
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    def get_is_subscribed(self, obj):
+        return (
+            self.context.get('request').user.is_authenticated
+            and Subscribe.objects.filter(user=self.context['request'].user,
+                                         author=obj).exists()
+        )
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
+
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        limit = request.GET.get('recipes_limit')
+        recipes = obj.recipes.all()
+        if limit:
+            recipes = recipes[:int(limit)]
+        serializer = RecipeListSerializer(recipes, many=True, read_only=True)
+        return serializer.data
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+
+
 class SubscribeSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели подписок на авторов.."""
     following = serializers.SlugRelatedField(
@@ -112,6 +151,9 @@ class SubscribeSerializer(serializers.ModelSerializer):
                 message='Вы уже подписаны на этого автора!'
             ),
         )
+
+    def to_representation(self, instance):
+        return SubscriptionsSerializer(instance, context=self.context).data
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -307,7 +349,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        return RecipeMinifiedSerializer(instance).data
+        return RecipeMinifiedSerializer(instance,context=self.context).data
 
 
 class Shopping_cartSerializer(serializers.ModelSerializer):
@@ -321,8 +363,8 @@ class Shopping_cartSerializer(serializers.ModelSerializer):
         return shopping_cart
 
     class Meta:
-        fields = ('ingredients_in_shopping_cart')
+        fields = ('ingredients_in_shopping_cart',)
         model = Shopping_cart
 
     def to_representation(self, instance):
-        return RecipeMinifiedSerializer(instance, context=self.context).data
+        return RecipeMinifiedSerializer(instance,context=self.context).data

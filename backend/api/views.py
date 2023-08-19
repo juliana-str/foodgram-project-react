@@ -71,7 +71,7 @@ class SubscribeViewSet(mixins.ListModelMixin,
                        viewsets.GenericViewSet):
     """Вьюсет для просмотра, создания подписки на авторов."""
     serializer_class = SubscribeSerializer
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     pagination_class = CustomPaginator
     filter_backends = (DjangoFilterBackend,)
     search_fields = ('following__username',)
@@ -97,17 +97,17 @@ class SubscribeViewSet(mixins.ListModelMixin,
         return Response({'detail': 'Успешная отписка'},
                         status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'],
-            permission_classes=(IsAuthenticated,),
-            pagination_class=CustomPaginator)
-    def subscriptions(self, request):
-        """Метод получения всех подписок."""
-        queryset = User.objects.filter(
-            subscribed_by__user=self.request.user).all()
-        page = self.paginate_queryset(queryset)
-        serializer = SubscribeSerializer(page, many=True,
-                                         context={'request': request})
-        return self.get_paginated_response(serializer.data)
+    # @action(detail=False, methods=['get'],
+    #         permission_classes=(IsAuthorOnly,),
+    #         pagination_class=CustomPaginator)
+    # def subscriptions(self, request):
+    #     """Метод получения всех подписок."""
+    #     queryset = User.objects.filter(
+    #         subscribed_by__user=self.request.user).all()
+    #     page = self.paginate_queryset(queryset)
+    #     serializer = SubscribeSerializer(page, many=True,
+    #                                      context={'request': request})
+    #     return self.get_paginated_response(serializer.data)
 
 
 class IngredientViewSet(mixins.ListModelMixin,
@@ -120,11 +120,6 @@ class IngredientViewSet(mixins.ListModelMixin,
     pagination_class = CustomPaginator
     filter_backends = (filters.SearchFilter, )
     search_fields = ('^name', )
-
-    def get_ingredient(self):
-        """Метод получения определенного ингредиента."""
-        return get_object_or_404(Ingredient,
-                                 id=self.kwargs.get('ingredient_id'))
 
 
 class TagViewSet(mixins.ListModelMixin,
@@ -204,16 +199,21 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
-    def shopping_cart(self, request, pk=None):
+    def shopping_cart(self, request, **kwargs):
         """Метод для создания, удаления списка продуктов для рецептов."""
-        serializer = Shopping_cartSerializer
-        if request.method == 'post':
-            serializer.save(user=self.request.user,
-                            shopping_cart=self.shopping_cart)
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+        user = request.user
+        if request.method == 'POST':
+            serializer = Shopping_cartSerializer(
+                data={'user': user.id, 'recipe': recipe.id})
+            serializer.is_valid(raise_exception=True)
+            if not Shopping_cart.objects.filter(user=user,
+                                           recipe=recipe).exists():
+                Shopping_cart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
+        elif request.method == 'DELETE':
             shopping_cart = get_object_or_404(
-                Shopping_cart, id=self.kwargs.get('chopping_cart_id'))
+                Shopping_cart, recipe=recipe)
             shopping_cart.delete()
-            return Response('Список покупок успешно удален.',
+            return Response({'detail': 'Список покупок успешно удален.'},
                             status=status.HTTP_200_OK)
