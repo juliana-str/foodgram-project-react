@@ -23,7 +23,7 @@ class Subscribe(models.Model):
         on_delete=models.CASCADE,
         related_name='follower',
     )
-    following = models.ForeignKey(
+    author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='following',
@@ -32,10 +32,10 @@ class Subscribe(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'following'],
-                name='unique_name_following'),
+                fields=['user', 'author'],
+                name='unique_name_author'),
             models.CheckConstraint(
-                check=~Q(user=F('following')),
-                name='check_following'
+                check=~Q(user=F('author')),
+                name='check_author'
             )
         ]
