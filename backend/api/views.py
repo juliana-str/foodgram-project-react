@@ -64,50 +64,39 @@ class CustomUserViewSet(UserViewSet):
         return Response({'detail': 'Пароль успешно изменен!'},
                         status=status.HTTP_204_NO_CONTENT)
 
-
-class SubscribeViewSet(mixins.ListModelMixin,
-                       mixins.CreateModelMixin,
-                       mixins.DestroyModelMixin,
-                       viewsets.GenericViewSet):
-    """Вьюсет для просмотра, создания подписки на авторов."""
-    serializer_class = SubscribeSerializer
-    permission_classes = (IsAuthenticated,)
-    pagination_class = CustomPaginator
-    filter_backends = (DjangoFilterBackend,)
-    search_fields = ('following__username',)
-
-    def get_queryset(self):
-        """Метод получения определенного автора."""
-        return self.request.user.follower.all()
-
-    def perform_create(self, request):
+    @action(detail=True, methods=['post', 'delete'],
+            pagination_class=CustomPaginator,
+            permission_classes=(IsAuthenticated,))
+    def subscribe(self, request, **kwargs):
         """Метод создания подписки на автора."""
-        serializer = SubscribeSerializer(
-            author=request.author,
-            data=request.data,
-            context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        Subscribe.objects.create(user=request.user, author=request.author)
-        return Response(serializer.data,
-                        status=status.HTTP_201_CREATED)
+        author = get_object_or_404(User, id=kwargs['id'])
+        user = request.user
+        if request.method == 'POST':
+            print(author, user)
+            serializer = SubscribeSerializer(
+                data={'user': user.id, 'author': author.id},
+                context={"request": request})
+            serializer.is_valid(raise_exception=True)
+            Subscribe.objects.create(user=user, author=author)
+            return Response(serializer.data,
+                            status=status.HTTP_201_CREATED)
+        else:
+            get_object_or_404(Subscribe, user=request.user,
+                              author=request.author).delete()
+            return Response({'detail': 'Успешная отписка'},
+                            status=status.HTTP_204_NO_CONTENT)
 
-    def perform_destroy(self, request):
-        get_object_or_404(Subscribe, user=request.user,
-                          author=request.author).delete()
-        return Response({'detail': 'Успешная отписка'},
-                        status=status.HTTP_204_NO_CONTENT)
-
-    # @action(detail=False, methods=['get'],
-    #         permission_classes=(IsAuthorOnly,),
-    #         pagination_class=CustomPaginator)
-    # def subscriptions(self, request):
-    #     """Метод получения всех подписок."""
-    #     queryset = User.objects.filter(
-    #         subscribed_by__user=self.request.user).all()
-    #     page = self.paginate_queryset(queryset)
-    #     serializer = SubscribeSerializer(page, many=True,
-    #                                      context={'request': request})
-    #     return self.get_paginated_response(serializer.data)
+    @action(detail=False, methods=['get'],
+            permission_classes=(IsAuthorOnly,),
+            pagination_class=CustomPaginator)
+    def subscriptions(self, request):
+        """Метод получения всех подписок."""
+        queryset = User.objects.filter(
+            subscribed_by__user=self.request.user).all()
+        page = self.paginate_queryset(queryset)
+        serializer = SubscribeSerializer(page, many=True,
+                                         context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
 
 class IngredientViewSet(mixins.ListModelMixin,
@@ -150,7 +139,7 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=(IsAuthenticated,))
     def favorite(self, request, **kwargs):
         """Метод добавления рецепта в избранное."""
-        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+        recipe = get_object_or_404(Recipe, id=kwargs['id'])
         user = request.user
         if request.method == 'POST':
             serializer = FavoriteSerializer(
@@ -164,7 +153,7 @@ class RecipeViewSet(ModelViewSet):
             return Response({'errors': 'Рецепт уже в избранном.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        elif request.method == 'DELETE':
+        else:
             get_object_or_404(Favorite, user=user.id,
                               recipe=recipe.id).delete()
             return Response({'detail': 'Рецепт успешно удален из избранного.'},
@@ -211,7 +200,7 @@ class RecipeViewSet(ModelViewSet):
                                            recipe=recipe).exists():
                 Shopping_cart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        elif request.method == 'DELETE':
+        else:
             shopping_cart = get_object_or_404(
                 Shopping_cart, recipe=recipe)
             shopping_cart.delete()

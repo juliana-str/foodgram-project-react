@@ -124,15 +124,17 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
 
 class SubscribeSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели подписок на авторов.."""
-    following = serializers.SlugRelatedField(
-        slug_field='username',
-        queryset=User.objects.all()
-    )
-    user = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='username',
-        default=CurrentUserDefault(),
-    )
+
+    class Meta:
+        fields = '__all__'
+        model = Subscribe
+        validators = (
+                serializers.UniqueTogetherValidator(
+                    queryset=Subscribe.objects.all(),
+                    fields=('user', 'author'),
+                    message='Вы уже подписаны на этого автора!'
+                ),
+        )
 
     def validate_following(self, data):
         """Проверка подписки на самого себя."""
@@ -141,18 +143,8 @@ class SubscribeSerializer(serializers.ModelSerializer):
                 'Вы не можете подписаться на самого себя!')
         return data
 
-    class Meta:
-        fields = '__all__'
-        model = Subscribe
-        validators = (
-            serializers.UniqueTogetherValidator(
-                queryset=Subscribe.objects.all(),
-                fields=('user', 'following'),
-                message='Вы уже подписаны на этого автора!'
-            ),
-        )
-
     def to_representation(self, instance):
+        instance = instance['author']
         return SubscriptionsSerializer(instance, context=self.context).data
 
 
