@@ -282,6 +282,10 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
     """Сериалайзер для рецепта без ингридиентов."""
+    id = serializers.ReadOnlyField(source='recipe.id')
+    name = serializers.ReadOnlyField(source='recipe.name')
+    cooking_time = serializers.ImageField(source='recipe.cooking_time')
+    image = Base64ImageField(read_only=True)
 
     class Meta:
         model = Recipe
@@ -292,30 +296,33 @@ class FavoriteSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели избранное."""
 
     class Meta:
-        fields = '__all__'
+        fields = ('user', 'recipe')
         model = Favorite
         validators = (
             serializers.UniqueTogetherValidator(
                 queryset=Favorite.objects.all(),
-                fields=('user', 'favorite_recipe'),
+                fields=('user', 'recipe'),
                 message='Вы уже добавили этот рецепт в избранное!'
             ),
         )
 
     def to_representation(self, instance):
-        return RecipeMinifiedSerializer(instance, context=self.context).data
+        return RecipeMinifiedSerializer(instance).data
 
 
 class Shopping_cartSerializer(serializers.ModelSerializer):
     """Сериалайзер для списка покупок."""
     ingredients_in_shopping_cart = serializers.SerializerMethodField()
 
-    class Meta:
-        fields = ('ingredients_in_shopping_cart')
-        model = Shopping_cart
-
     def get_ingredients_in_shopping_cart(self):
         shopping_cart = IngredientInRecipe.objects.select_related(
             'recipe', 'ingredient'
         )
         return shopping_cart
+
+    class Meta:
+        fields = ('ingredients_in_shopping_cart')
+        model = Shopping_cart
+
+    def to_representation(self, instance):
+        return RecipeMinifiedSerializer(instance, context=self.context).data

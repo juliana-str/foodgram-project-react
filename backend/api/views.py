@@ -23,17 +23,17 @@ from .serializers import (
     FavoriteSerializer,
     IngredientSerializer,
     RecipeListSerializer,
-    RecipeMinifiedSerializer,
     RecipeCreateUpdateSerializer,
     TagSerializer,
-    Shopping_cartSerializer,
+    Shopping_cartSerializer
 )
 from recipes.models import (
     Favorite,
     Ingredient,
     IngredientInRecipe,
     Recipe,
-    Tag
+    Tag,
+    Shopping_cart
 )
 from users.models import Subscribe, User
 from .permissions import IsAuthorOrReadOnly, IsAuthorOnly
@@ -149,42 +149,34 @@ class RecipeViewSet(ModelViewSet):
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeListSerializer
-        elif self.action == 'favorite':
-            return FavoriteSerializer
         return RecipeCreateUpdateSerializer
-
-    @action(detail=False, methods=['get'],
-        permission_classes=(AllowAny,))
-    def get_recipe(self):
-        recipe = get_object_or_404(
-            Recipe, id=self.kwargs.get('recipe_id'))
-        return recipe
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=(IsAuthenticated,))
-    def favorite(self, request):
+    def favorite(self, request, **kwargs):
+        """Метод добавления рецепта в избранное."""
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+        user = request.user
         if request.method == 'POST':
             serializer = FavoriteSerializer(
-                self.get_recipe(),
-                data=request.data,
-                context={"request": request})
+                data={'user': user.id, 'recipe': recipe.id})
             serializer.is_valid(raise_exception=True)
-            if not Favorite.objects.filter(user=request.user,
-                                           recipe=self.get_recipe).exists():
-                Favorite.objects.create(
-                    user=request.user, recipe=self.get_recipe)
+            if not Favorite.objects.filter(user=user,
+                                           recipe=recipe).exists():
+                Favorite.objects.create(user=user, recipe=recipe)
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
             return Response({'errors': 'Рецепт уже в избранном.'},
                             status=status.HTTP_400_BAD_REQUEST)
+
         elif request.method == 'DELETE':
-            get_object_or_404(Favorite, user=request.user,
-                              recipe=self.get_recipe).delete()
+            get_object_or_404(Favorite, user=user.id,
+                              recipe=recipe.id).delete()
             return Response({'detail': 'Рецепт успешно удален из избранного.'},
                             status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
-            permission_classes=(IsAuthenticated, IsAuthorOnly,))
+            permission_classes=(IsAuthorOnly,))
     def download_shopping_cart(self, request):
         """Метод для просмотра списка покупок."""
         items = IngredientInRecipe.objects.select_related(
@@ -211,7 +203,7 @@ class RecipeViewSet(ModelViewSet):
         return response
 
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=(IsAuthorOnly,))
+            permission_classes=(IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         """Метод для создания, удаления списка продуктов для рецептов."""
         serializer = Shopping_cartSerializer
@@ -220,8 +212,8 @@ class RecipeViewSet(ModelViewSet):
                             shopping_cart=self.shopping_cart)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            favorite_recipe = get_object_or_404(
-                Favorite, id=self.kwargs.get('recipe_id'))
-            favorite_recipe.delete()
-            return Response('Рецепт успешно удален из избранного.',
+            shopping_cart = get_object_or_404(
+                Shopping_cart, id=self.kwargs.get('chopping_cart_id'))
+            shopping_cart.delete()
+            return Response('Список покупок успешно удален.',
                             status=status.HTTP_200_OK)
