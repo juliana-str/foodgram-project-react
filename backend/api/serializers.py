@@ -284,7 +284,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     """Сериалайзер для рецепта без ингридиентов."""
     id = serializers.ReadOnlyField(source='recipe.id')
     name = serializers.ReadOnlyField(source='recipe.name')
-    cooking_time = serializers.ImageField(source='recipe.cooking_time')
+    cooking_time = serializers.ReadOnlyField(source='recipe.cooking_time')
     image = Base64ImageField(read_only=True)
 
     class Meta:
