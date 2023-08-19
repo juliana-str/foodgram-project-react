@@ -39,3 +39,6 @@ class Subscribe(models.Model):
                 name='check_author'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user.username} - {self.author.username}'

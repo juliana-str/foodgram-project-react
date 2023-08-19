@@ -77,12 +77,14 @@ class CustomUserViewSet(UserViewSet):
                 data={'user': user.id, 'author': author.id},
                 context={"request": request})
             serializer.is_valid(raise_exception=True)
-            Subscribe.objects.create(user=user, author=author)
-            return Response(serializer.data,
-                            status=status.HTTP_201_CREATED)
+            if not Subscribe.objects.filter(user=user,
+                                           author=author).exists():
+                Subscribe.objects.create(user=user, author=author)
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
         else:
-            get_object_or_404(Subscribe, user=request.user,
-                              author=request.author).delete()
+            get_object_or_404(Subscribe, user=user,
+                              author=author).delete()
             return Response({'detail': 'Успешная отписка'},
                             status=status.HTTP_204_NO_CONTENT)
 
@@ -201,8 +203,7 @@ class RecipeViewSet(ModelViewSet):
                 Shopping_cart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            shopping_cart = get_object_or_404(
-                Shopping_cart, recipe=recipe)
-            shopping_cart.delete()
+            get_object_or_404(
+                Shopping_cart, recipe=recipe).delete()
             return Response({'detail': 'Список покупок успешно удален.'},
                             status=status.HTTP_200_OK)

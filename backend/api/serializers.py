@@ -319,7 +319,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='recipe.id')
     name = serializers.ReadOnlyField(source='recipe.name')
     cooking_time = serializers.ReadOnlyField(source='recipe.cooking_time')
-    image = Base64ImageField(read_only=True)
+    image = Base64ImageField(read_only=True, source='recipe.image')
 
     class Meta:
         model = Recipe
@@ -355,8 +355,10 @@ class Shopping_cartSerializer(serializers.ModelSerializer):
         return shopping_cart
 
     class Meta:
-        fields = ('ingredients_in_shopping_cart',)
+        fields = ('ingredients_in_shopping_cart', 'user', 'recipe')
         model = Shopping_cart
 
     def to_representation(self, instance):
-        return RecipeMinifiedSerializer(instance,context=self.context).data
+        print(instance)
+        instance = instance['recipe']
+        return RecipeMinifiedSerializer(instance).data
