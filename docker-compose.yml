@@ -4,15 +4,14 @@ volumes:
   pg_data:
   static:
   media:
+  redoc:
 
 services:
   db:
-    image: postgres:13.10
+    image: postgres:13.10-alpine
     env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
   backend:
     build: ./backend/
@@ -20,6 +19,7 @@ services:
     volumes:
       - static:/backend_static
       - media:/app/media
+      - redoc:/app/docs
 
   frontend:
     build:
@@ -36,5 +36,6 @@ services:
     volumes:
       - static:/static
       - media:/app/media
+      - redoc:/app/docs
     ports:
       - 8000:80
