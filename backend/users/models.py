@@ -5,9 +5,6 @@ from django.db.models import Q, F
 
 class User(AbstractUser):
     """Модель просмотра, создания и удаления пользователей."""
-    is_subscribed = models.BooleanField(
-        null=True
-    )
 
     class Meta:
         ordering = ('id',)
