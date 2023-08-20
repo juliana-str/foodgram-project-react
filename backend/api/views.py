@@ -3,9 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import SetPasswordSerializer
-
 from djoser.views import UserViewSet
-
 from rest_framework import (filters, status, mixins)
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -16,7 +14,7 @@ from .filters import RecipeFilter
 from .serializers import (
     SubscribeSerializer,
     UserGetSerializer,
-    UserPostSerializer,
+    CustomUserSerializer,
     FavoriteSerializer,
     IngredientSerializer,
     RecipeListSerializer,
@@ -44,21 +42,20 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPaginator
     search_fields = ('username', 'email')
     lookup_fields = ('name', 'id')
-    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return UserGetSerializer
-        return UserPostSerializer
+        return CustomUserSerializer
 
     @action(detail=False, methods=['post'],
             permission_classes=(IsAuthenticated,))
     def set_password(self, request):
         serializer = SetPasswordSerializer(data=request.data,
                                            context={'request': request})
-        if serializer.is_valid(raise_exception=True):
-            self.request.user.save()
-        return Response({'detail': 'Пароль успешно изменен!'},
+        serializer.is_valid(raise_exception=True)
+        self.request.user.save()
+        return Response({'detail': 'Пароль успешно изменен.'},
                         status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
@@ -69,16 +66,13 @@ class CustomUserViewSet(UserViewSet):
         author = get_object_or_404(User, id=kwargs['id'])
         user = request.user
         if request.method == 'POST':
-            print(author, user)
             serializer = SubscribeSerializer(
                 data={'user': user.id, 'author': author.id},
                 context={"request": request})
             serializer.is_valid(raise_exception=True)
-            if not Subscribe.objects.filter(user=user,
-                                            author=author).exists():
-                Subscribe.objects.create(user=user, author=author)
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
+            Subscribe.objects.create(user=user, author=author)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         else:
             get_object_or_404(Subscribe, user=user,
                               author=author).delete()
@@ -112,7 +106,6 @@ class IngredientViewSet(mixins.ListModelMixin,
 
 class TagViewSet(mixins.ListModelMixin,
                  mixins.RetrieveModelMixin,
-                 mixins.CreateModelMixin,
                  GenericViewSet):
     """Вьюсет для просмотра тегов."""
     queryset = Tag.objects.all()
