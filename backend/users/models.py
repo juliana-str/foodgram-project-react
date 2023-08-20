@@ -9,8 +9,10 @@ class User(AbstractUser):
     """Модель просмотра, создания и удаления пользователей."""
     username = models.CharField(
         max_length=150,
+        unique=True,
         validators=(validate_username,)
     )
+
     class Meta:
         ordering = ('id',)
 
