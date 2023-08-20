@@ -18,22 +18,3 @@ def validate_slug(value):
         raise ValidationError(
             'Можно использовать только буквы, цифры')
     return value
-
-
-def validate_amount(value):
-    if value < 1:
-        raise ValidationError('Количество продукта должно быть больше 0')
-    return value
-
-
-def validate_ingredients(value):
-    if len(value) < 1:
-        raise ValidationError('Нужно добавить ингредиент!')
-    return value
-
-
-def validate_time(value):
-    if value < 1:
-        raise ValidationError(
-            'Время приготовления не может быть меньше 1 минуты')
-    return value
