@@ -1,8 +1,5 @@
 from django.db import transaction
-from djoser.serializers import (
-    UserSerializer,
-    UserCreateSerializer,
-)
+from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
 from drf_base64.fields import Base64ImageField
 
@@ -15,18 +12,6 @@ from recipes.models import (
     ShoppingCart
 )
 from users.models import Subscribe, User
-
-
-# class CustomUserSerializer(UserSerializer):
-#
-#     class Meta:
-#         fields = ('id',
-#                   'email',
-#                   'username',
-#                   'first_name',
-#                   'last_name',
-#                   )
-#         model = User
 
 
 class UserGetSerializer(UserCreateSerializer):
@@ -225,7 +210,6 @@ class RecipeListSerializer(serializers.ModelSerializer):
         exclude = ('pub_date',)
 
 
-
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
     author = UserGetSerializer(read_only=True)
@@ -342,6 +326,5 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         model = ShoppingCart
 
     def to_representation(self, instance):
-        print(instance)
         instance = instance['recipe']
         return RecipeMinifiedSerializer(instance).data
