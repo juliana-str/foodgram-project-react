@@ -12,15 +12,17 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .filters import RecipeFilter
 from .serializers import (
-    SubscribeSerializer,
-    UserGetSerializer,
-    CustomUserSerializer,
+    # CustomUserSerializer,
     FavoriteSerializer,
     IngredientSerializer,
     RecipeListSerializer,
     RecipeCreateUpdateSerializer,
     TagSerializer,
-    ShoppingCartSerializer
+    ShoppingCartSerializer,
+    SubscribeSerializer,
+    SubscriptionsSerializer,
+    UserGetSerializer,
+    UserPostSerializer
 )
 from recipes.models import (
     Favorite,
@@ -42,11 +44,21 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPaginator
     search_fields = ('username', 'email')
     lookup_fields = ('name', 'id')
+    http_method_names = ['get', 'post', 'delete']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return UserGetSerializer
-        return CustomUserSerializer
+        return UserPostSerializer
+
+    @action(detail=False, methods=['get'],
+            pagination_class=None,
+            permission_classes=[AllowAny])
+    def get_user(self, request):
+        """Метод просмотра информации о пользователе."""
+        serializer = UserGetSerializer(id=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'],
             permission_classes=(IsAuthenticated,))
@@ -59,8 +71,7 @@ class CustomUserViewSet(UserViewSet):
                         status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
-            pagination_class=CustomPaginator,
-            permission_classes=(IsAuthenticated,))
+            permission_classes=[IsAuthenticated])
     def subscribe(self, request, **kwargs):
         """Метод создания подписки на автора."""
         author = get_object_or_404(User, id=kwargs['id'])
@@ -76,20 +87,21 @@ class CustomUserViewSet(UserViewSet):
         else:
             get_object_or_404(Subscribe, user=user,
                               author=author).delete()
-            return Response({'detail': 'Успешная отписка'},
+            return Response({'detail': 'Успешная отписка.'},
                             status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
-            permission_classes=(IsAuthorOnly,),
-            pagination_class=CustomPaginator)
+            permission_classes=[IsAuthorOnly])
     def subscriptions(self, request):
         """Метод получения всех подписок."""
-        queryset = User.objects.filter(
-            subscribed_by__user=self.request.user).all()
-        page = self.paginate_queryset(queryset)
-        serializer = SubscribeSerializer(page, many=True,
-                                         context={'request': request})
-        return self.get_paginated_response(serializer.data)
+        authors = User.objects.filter(
+            following__user=self.request.user).all()
+        print(authors)
+        serializer = SubscribeSerializer(
+            data=authors, many=True)
+        serializer.is_valid(raise_exception=True)
+        print('>>>>>>>>>>>>>')
+        return Response(serializer.data)
 
 
 class IngredientViewSet(mixins.ListModelMixin,
@@ -127,24 +139,31 @@ class RecipeViewSet(ModelViewSet):
             return RecipeListSerializer
         return RecipeCreateUpdateSerializer
 
+    # @action(detail=False, methods=['get'],
+    #         permission_classes=[AllowAny])
+    # def recipes_list(self, request, *args, **kwargs):
+    #     queryset = self.filter_queryset(self.get_queryset())
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
+
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=(IsAuthenticated,))
+            permission_classes=[IsAuthenticated])
     def favorite(self, request, **kwargs):
         """Метод добавления рецепта в избранное."""
-        recipe = get_object_or_404(Recipe, id=kwargs['id'])
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
         user = request.user
         if request.method == 'POST':
             serializer = FavoriteSerializer(
                 data={'user': user.id, 'recipe': recipe.id})
             serializer.is_valid(raise_exception=True)
-            if not Favorite.objects.filter(user=user,
-                                           recipe=recipe).exists():
-                Favorite.objects.create(user=user, recipe=recipe)
-                return Response(serializer.data,
+            Favorite.objects.create(user=user, recipe=recipe)
+            return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
-            return Response({'errors': 'Рецепт уже в избранном.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
         else:
             get_object_or_404(Favorite, user=user.id,
                               recipe=recipe.id).delete()
@@ -152,7 +171,7 @@ class RecipeViewSet(ModelViewSet):
                             status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
-            permission_classes=(IsAuthorOnly,))
+            permission_classes=[IsAuthorOnly])
     def download_shopping_cart(self, request):
         """Метод для просмотра списка покупок."""
         items = IngredientInRecipe.objects.select_related(
@@ -179,7 +198,7 @@ class RecipeViewSet(ModelViewSet):
         return response
 
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=(IsAuthenticated,))
+            permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, **kwargs):
         """Метод для создания, удаления списка продуктов для рецептов."""
         recipe = get_object_or_404(Recipe, id=kwargs['pk'])
