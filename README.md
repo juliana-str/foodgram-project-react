@@ -1,8 +1,12 @@
-# praktikum_new_diplom
+# foodgram
 
 ### Описание:
 
-
+«Фудграм» — сайт, на котором пользователи будут публиковать рецепты,
+добавлять чужие рецепты в избранное и подписываться на публикации других
+авторов. Пользователям сайта также будет доступен сервис «Список покупок». 
+Он позволит создавать список продуктов, которые нужно купить для приготовления
+выбранных блюд.
 
 ### Установка:
 
@@ -68,38 +72,90 @@ python3 manage.py runserver
  - last_name
  - password
 
+Пример запроса: 
 
+```
+{
+    "email": "kisa@yandex.ru",
+    "username": "kisa.mura",
+    "first_name": "Кира",
+    "last_name": "Муравьева",
+    "password": "mnjggffdfdf"
+}
+```
 ### Аутентификация 
 
 1. Отправить POST-запрос на получение токена на эндпоинт /api/auth/token/login/.
+
+Пример запроса: 
+
+```
+{
+    "email": "kisa@yandex.ru",
+    "password": "mnjggffdfdf"
+}
+```
+
 2. Отправить POST-запрос на удаление токена на эндпоинт /api/auth/token/logout/.
 
 
 ### Примеры запросов:
 
-Результат POST-запроса пользователя на просмотр рецептов:
+POST-запрос пользователя на создание рецепта:
 
 1. Пример запроса: 
 
 ```
 {
-    "name": "",
-    "author": null,
-    "ingredients": [],
-    "image": null,
-    "text": "",
-    "cooking_time": null
-}
-```
+   "id": 1,
+   "name": "Блины",
+   "tags": 1,
+   "ingredients": [
+       {
+          "id": 8,
+          "amount": 10
+       },
+       {
+          "id": 9,      
+          "amount": 2      
+       }
+       ],
+   "image": Null,     
+   "text": "Ароматные блинчики!",     
+   "cooking_time": 35     
+  }
+  
+ ```       
 
 2. Пример ответа:
 
 ```
-{
-  "id": 0,
-  "text": "string",
-  "author": "string",
-  "score": 10,
-  "pub_date": "2023-04-25T06:38:48.301Z"
-}
+  {
+        "id": 1,
+        "name": "Блины",
+        "tags": 1,
+        "author": {
+            "id": 2,
+            "email": "nastya@yandex.ru",
+            "username": "nastya.vasina",
+            "first_name": "Настя",
+            "last_name": "Васина",
+            "is_subscribed": false
+        },
+        "ingredients": [
+            {
+                "id": 8,
+                "amount": 1
+            },
+            {
+                "id": 9,
+                "amount": 2
+            }
+        ],
+        "image": "http://127.0.0.1:8000/media/recipes/media/%D0%B1%D0%BB%D0%B8%D0%BD%D1%8B_GjtOUPa.jpg",
+        "text": "Ароматные блинчики!",
+        "cooking_time": 35,
+        "is_favorited": false,
+        "is_in_shopping_cart": false
+    }
 ```
