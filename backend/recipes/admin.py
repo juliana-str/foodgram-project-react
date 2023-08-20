@@ -6,7 +6,7 @@ from recipes.models import (
     Ingredient,
     Recipe,
     Tag,
-    Shopping_cart
+    ShoppingCart
 )
 
 
@@ -60,7 +60,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_editable = ('user', 'recipe')
 
 
-@admin.register(Shopping_cart)
+@admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'recipe')
     list_editable = ('user', 'recipe')
