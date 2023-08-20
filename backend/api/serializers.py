@@ -15,7 +15,7 @@ from recipes.models import (
     ShoppingCart
 )
 from users.models import Subscribe, User
-from .validators import validate_username, validate_ingredients
+from .validators import validate_username
 
 
 class CustomUserSerializer(UserSerializer):
@@ -52,35 +52,35 @@ class UserGetSerializer(UserCreateSerializer):
         model = User
 
 
-class UserPostSerializer(UserCreateSerializer):
-    """Сериалайзер для модели пользователей, создание, изменение, удаление."""
-    username = serializers.CharField(
-        max_length=150,
-        validators=(validate_username,),
-    ),
-    first_name = serializers.CharField(
-        max_length=150,
-    ),
-    last_name = serializers.CharField(
-        max_length=150,
-    ),
-    email = serializers.EmailField(
-        max_length=254,
-    )
-    password = serializers.CharField(
-        max_length=150
-    )
-
-    class Meta:
-        fields = (
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'password'
-        )
-        model = User
+# class UserPostSerializer(UserCreateSerializer):
+#     """Сериалайзер для модели пользователей, создание, изменение, удаление."""
+#     username = serializers.CharField(
+#         max_length=150,
+#         validators=(validate_username,),
+#     ),
+#     first_name = serializers.CharField(
+#         max_length=150,
+#     ),
+#     last_name = serializers.CharField(
+#         max_length=150,
+#     ),
+#     email = serializers.EmailField(
+#         max_length=254,
+#     )
+#     password = serializers.CharField(
+#         max_length=150
+#     )
+#
+#     class Meta:
+#         fields = (
+#             'id',
+#             'email',
+#             'username',
+#             'first_name',
+#             'last_name',
+#             'password'
+#         )
+#         model = User
 
 
 class SubscriptionsSerializer(serializers.ModelSerializer):
@@ -136,7 +136,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             ),
         )
 
-    def validate_following(self, data):
+    def validate_self_subscribe(self, data):
         """Проверка подписки на самого себя."""
         if self.context['request'].user == data:
             raise serializers.ValidationError(
@@ -209,21 +209,21 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Tag
 
-    @transaction.atomic
-    def create(self, validated_data):
-        name = validated_data.pop('name')
-        slug = validated_data.pop('slug')
-        color = validated_data.pop('color')
-        tag = Tag.objects.create(name=name,
-                                 slug=slug,
-                                 color=color)
-        return tag
-
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        tag = Tag.objects.get(instance=instance)
-        if validated_data:
-            tag.save()
+    # @transaction.atomic
+    # def create(self, validated_data):
+    #     name = validated_data.pop('name')
+    #     slug = validated_data.pop('slug')
+    #     color = validated_data.pop('color')
+    #     tag = Tag.objects.create(name=name,
+    #                              slug=slug,
+    #                              color=color)
+    #     return tag
+    #
+    # @transaction.atomic
+    # def update(self, instance, validated_data):
+    #     tag = Tag.objects.get(instance=instance)
+    #     if validated_data:
+    #         tag.save()
 
 
 class RecipeListSerializer(serializers.ModelSerializer):
