@@ -2,10 +2,15 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import Q, F
 
+from .api.validators import validate_username
+
 
 class User(AbstractUser):
     """Модель просмотра, создания и удаления пользователей."""
-
+    username = models.CharField(
+        max_length=150,
+        validators=(validate_username,)
+    )
     class Meta:
         ordering = ('id',)
 
