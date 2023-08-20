@@ -15,7 +15,6 @@ from recipes.models import (
     ShoppingCart
 )
 from users.models import Subscribe, User
-from .validators import validate_username
 
 
 class CustomUserSerializer(UserSerializer):
@@ -263,10 +262,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
-    ingredients = IngredientInRecipeCreateSerializer(
-        many=True,
-        validators=(validate_ingredients,)
-    )
+    ingredients = IngredientInRecipeCreateSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all()
@@ -275,6 +271,18 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         exclude = ('pub_date',)
+
+    def validate_ingredients(self, data):
+        if len(data) < 1:
+            raise serializers.ValidationError('Нужно добавить ингредиент!')
+        elif data not in Ingredient.objects.all():
+            raise serializers.ValidationError(
+                'Нужно выбрать ингредиент из представленных!')
+
+    def validate_amount(self, data):
+        if data < 1:
+            raise serializers.ValidationError(
+                'Количество продукта должно быть больше 0')
 
     @transaction.atomic
     def create(self, validated_data):
