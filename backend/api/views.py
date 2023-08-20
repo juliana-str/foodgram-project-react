@@ -12,7 +12,6 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from .filters import RecipeFilter
 from .serializers import (
-    # CustomUserSerializer,
     FavoriteSerializer,
     IngredientSerializer,
     RecipeListSerializer,
@@ -20,7 +19,6 @@ from .serializers import (
     TagSerializer,
     ShoppingCartSerializer,
     SubscribeSerializer,
-    SubscriptionsSerializer,
     UserGetSerializer,
     UserPostSerializer
 )
@@ -50,15 +48,6 @@ class CustomUserViewSet(UserViewSet):
         if self.action in ('list', 'retrieve'):
             return UserGetSerializer
         return UserPostSerializer
-
-    @action(detail=False, methods=['get'],
-            pagination_class=None,
-            permission_classes=[AllowAny])
-    def get_user(self, request):
-        """Метод просмотра информации о пользователе."""
-        serializer = UserGetSerializer(id=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'],
             permission_classes=(IsAuthenticated,))
@@ -96,11 +85,9 @@ class CustomUserViewSet(UserViewSet):
         """Метод получения всех подписок."""
         authors = User.objects.filter(
             following__user=self.request.user).all()
-        print(authors)
         serializer = SubscribeSerializer(
-            data=authors, many=True)
+            data=authors.values()['user'], many=True)
         serializer.is_valid(raise_exception=True)
-        print('>>>>>>>>>>>>>')
         return Response(serializer.data)
 
 

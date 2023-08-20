@@ -34,7 +34,7 @@ services:
     image: nginx:1.19.3
     env_file: .env
     volumes:
-      - static:/static
+      - static:/app/static
       - media:/app/media
       - redoc:/app/docs
     ports:
