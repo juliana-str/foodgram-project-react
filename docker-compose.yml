@@ -41,6 +41,3 @@ services:
       - static:/var/html/static
       - media:/var/html/media
       - redoc:/usr/share/nginx/html/api/docs/
-  depens_on:
-    - backend
-    - frontend
