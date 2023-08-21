@@ -126,18 +126,6 @@ class RecipeViewSet(ModelViewSet):
             return RecipeListSerializer
         return RecipeCreateUpdateSerializer
 
-    # @action(detail=False, methods=['get'],
-    #         permission_classes=[AllowAny])
-    # def recipes_list(self, request, *args, **kwargs):
-    #     queryset = self.filter_queryset(self.get_queryset())
-    #     page = self.paginate_queryset(queryset)
-    #     if page is not None:
-    #         serializer = self.get_serializer(page, many=True)
-    #         return self.get_paginated_response(serializer.data)
-    #
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(serializer.data)
-
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
     def favorite(self, request, **kwargs):

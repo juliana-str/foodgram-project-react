@@ -152,7 +152,6 @@ class Favorite(models.Model):
         related_name='favorite_recipe',
         verbose_name='Избранный рецепт'
     )
-    favorite_count = models.PositiveIntegerField(null=True)
 
     class Meta:
         verbose_name = 'Избранное'

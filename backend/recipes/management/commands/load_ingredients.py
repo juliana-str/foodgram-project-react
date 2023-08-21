@@ -7,9 +7,8 @@ from recipes.models import Ingredient
 
 
 def read_ingredients():
-    my_dir = os.path.dirname(settings.BASE_DIR)
-    path = os.path.join(my_dir, 'data', 'ingredients.json')
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(os.path.join(settings.BASE_DIR, 'ingredients.json'),
+              'r', encoding='utf-8') as f:
         data = json.load(f)
         for i in range(len(data)):
             Ingredient.objects.get_or_create(
