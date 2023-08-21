@@ -1,4 +1,4 @@
-version: '3'
+version: '3.3'
 
 volumes:
   pg_data_production:
@@ -28,17 +28,19 @@ services:
     env_file: .env
     command: cp -r /app/build/. /static/
     volumes:
-      - static:/static
+      - ./frontend/:/app/result_build/
 
   gateway:
     image: julianastr/foodgram_gateway
     env_file: .env
     volumes:
-      - static:/app/static
-      - media:/app/media
-      - redoc:/app/docs
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/build:/usr/share/nginx/html/
+      - static:/var/html/static
+      - media:/var/html/media
+      - redoc:/usr/share/nginx/html/api/docs/
     depend_on:
       -backend
       -frontend
     ports:
-      - 8000:80
+      - "8000:80"
