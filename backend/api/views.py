@@ -19,6 +19,7 @@ from .serializers import (
     TagSerializer,
     ShoppingCartSerializer,
     SubscribeSerializer,
+    SubscriptionsSerializer,
     UserGetSerializer,
     UserPostSerializer
 )
@@ -83,11 +84,13 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthorOnly])
     def subscriptions(self, request):
         """Метод получения всех подписок."""
-        authors = User.objects.filter(
-            following__user=self.request.user).all()
-        serializer = SubscribeSerializer(
-            data=authors.values()['user'], many=True)
-        serializer.is_valid(raise_exception=True)
+        authors = (User.objects.filter(
+            following__user=request.user).all())
+        serializer = SubscriptionsSerializer(
+            authors,
+            many=True,
+            context={'request': request}
+        )
         return Response(serializer.data)
 
 
@@ -182,9 +185,7 @@ class RecipeViewSet(ModelViewSet):
             serializer = ShoppingCartSerializer(
                 data={'user': user.id, 'recipe': recipe.id})
             serializer.is_valid(raise_exception=True)
-            if not ShoppingCart.objects.filter(user=user,
-                                               recipe=recipe).exists():
-                ShoppingCart.objects.create(user=user, recipe=recipe)
+            ShoppingCart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             get_object_or_404(
