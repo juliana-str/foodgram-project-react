@@ -18,12 +18,6 @@ class UserGetSerializer(UserCreateSerializer):
     """Сериалайзер для модели пользователей, просмотр."""
     is_subscribed = serializers.SerializerMethodField()
 
-    def get_is_subscribed(self, request):
-        if self.context['request'].user.is_authenticated:
-            return Subscribe.objects.filter(
-                user=self.context['request'].user).exists()
-        return False
-
     class Meta:
         fields = ('id',
                   'email',
@@ -33,6 +27,12 @@ class UserGetSerializer(UserCreateSerializer):
                   'is_subscribed'
                   )
         model = User
+
+    def get_is_subscribed(self, request):
+        if self.context['request'].user.is_authenticated:
+            return Subscribe.objects.filter(
+                user=self.context['request'].user).exists()
+        return False
 
 
 class UserPostSerializer(UserCreateSerializer):
@@ -56,6 +56,19 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+
     def get_is_subscribed(self, obj):
         return (
             self.context.get('request').user.is_authenticated
@@ -75,19 +88,6 @@ class SubscriptionsSerializer(serializers.ModelSerializer):
         serializer = RecipeMinifiedSerializer(
             recipes, many=True, read_only=True)
         return serializer.data
-
-    class Meta:
-        model = User
-        fields = (
-            'id',
-            'email',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'recipes',
-            'recipes_count'
-        )
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
@@ -190,6 +190,10 @@ class RecipeListSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Recipe
+        exclude = ('pub_date',)
+
     def get_is_favorited(self, obj):
         return (
             self.context.get('request').user.is_authenticated
@@ -204,10 +208,6 @@ class RecipeListSerializer(serializers.ModelSerializer):
                 user=self.context['request'].user,
                 recipe=obj).exists()
         )
-
-    class Meta:
-        model = Recipe
-        exclude = ('pub_date',)
 
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
@@ -315,15 +315,21 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     """Сериалайзер для списка покупок."""
     ingredients_in_shopping_cart = serializers.SerializerMethodField()
 
+    class Meta:
+        fields = ('ingredients_in_shopping_cart', 'user', 'recipe')
+        model = ShoppingCart
+
     def get_ingredients_in_shopping_cart(self):
         shopping_cart = IngredientInRecipe.objects.select_related(
             'recipe', 'ingredient'
         )
         return shopping_cart
 
-    class Meta:
-        fields = ('ingredients_in_shopping_cart', 'user', 'recipe')
-        model = ShoppingCart
+    def validate_shopping_cart(self):
+        if not ShoppingCart.objects.filter(user=self.context['request'].user,
+                                           recipe=self.context['request'].recipe
+                                           ).exists():
+            raise serializers.ValidationError('Рецепт уже в корзине.')
 
     def to_representation(self, instance):
         instance = instance['recipe']
