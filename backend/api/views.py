@@ -81,18 +81,29 @@ class CustomUserViewSet(UserViewSet):
                             status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
+            pagination_class=CustomPaginator,
             permission_classes=[IsAuthorOnly])
     def subscriptions(self, request):
         """Метод получения всех подписок."""
-        authors = (User.objects.filter(
+        # authors = User.objects.filter(
+        #     following__user=request.user).all()
+        # serializer = SubscriptionsSerializer(
+        #     authors,
+        #     many=True,
+        #     context={'request': request}
+        # )
+        # return Response(serializer.data)
+        queryset = self.filter_queryset(User.objects.filter(
             following__user=request.user).all())
-        serializer = SubscriptionsSerializer(
-            authors,
-            many=True,
-            context={'request': request}
-        )
-        return Response(serializer.data)
+        page = self.paginate_queryset(queryset)
+        if page:
+            serializer = SubscriptionsSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
 
+        serializer = SubscriptionsSerializer(
+            queryset, many=True, context={'request': request})
+        return Response(serializer.data)
 
 class IngredientViewSet(mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,
