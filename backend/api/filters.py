@@ -20,15 +20,13 @@ class RecipeFilter(filters.FilterSet):
 
     def get_is_favorited(self, queryset, name, value):
         if value:
-            print(queryset)
-            return Recipe.objects.filter(
-                favorite_recipe__recipe=self.request.user).all()
+            return queryset.filter(favorite_recipe=value).all()
         return queryset
 
-    def get_is_in_shopping_cart(self, value, name, obj):
+    def get_is_in_shopping_cart(self, queryset, name, value):
         if value:
-            return obj.filter(shopping_recipe__recipe=obj.recipe)
-        return obj
+            return queryset.filter(shopping_recipe=value)
+        return queryset
 
 
 class IngredientFilter(filters.FilterSet):
