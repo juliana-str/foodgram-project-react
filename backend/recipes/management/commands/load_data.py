@@ -7,7 +7,7 @@ from recipes.models import Ingredient, Tag
 
 
 def read_ingredients():
-    with open(os.path.join(settings.BASE_DIR, 'ingredients.json'),
+    with open(os.path.join(settings.BASE_DIR, 'data', 'ingredients.json'),
               'r', encoding='utf-8') as f:
         data = json.load(f)
         for i in range(len(data)):
@@ -20,7 +20,7 @@ def read_ingredients():
 
 
 def read_tags():
-    with open(os.path.join(settings.BASE_DIR, 'tags.json'),
+    with open(os.path.join(settings.BASE_DIR, 'data', 'tags.json'),
               'r', encoding='utf-8') as f:
         data = json.load(f)
         for i in range(len(data)):
