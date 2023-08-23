@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import (AllowAny, IsAuthenticated)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientFilter
 from .serializers import (
     FavoriteSerializer,
     IngredientSerializer,
@@ -75,24 +75,19 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         else:
-            get_object_or_404(Subscribe, user=user,
-                              author=author).delete()
-            return Response({'detail': 'Успешная отписка.'},
-                            status=status.HTTP_204_NO_CONTENT)
+            try:
+                Subscribe.objects.get(user=user, author=author).delete()
+            except:
+                ValueError('Страница не найдена.')
+            finally:
+                return Response({'detail': 'Успешная отписка.'},
+                                status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
             pagination_class=CustomPaginator,
             permission_classes=[IsAuthorOnly])
     def subscriptions(self, request):
         """Метод получения всех подписок."""
-        # authors = User.objects.filter(
-        #     following__user=request.user).all()
-        # serializer = SubscriptionsSerializer(
-        #     authors,
-        #     many=True,
-        #     context={'request': request}
-        # )
-        # return Response(serializer.data)
         queryset = self.filter_queryset(User.objects.filter(
             following__user=request.user).all())
         page = self.paginate_queryset(queryset)
@@ -100,10 +95,10 @@ class CustomUserViewSet(UserViewSet):
             serializer = SubscriptionsSerializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
-
         serializer = SubscriptionsSerializer(
             queryset, many=True, context={'request': request})
         return Response(serializer.data)
+
 
 class IngredientViewSet(mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,
@@ -113,8 +108,9 @@ class IngredientViewSet(mixins.ListModelMixin,
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
     pagination_class = CustomPaginator
-    filter_backends = (filters.SearchFilter, )
-    search_fields = ('^name', )
+    filter_backends = (filters.SearchFilter,)
+    filterset_class = IngredientFilter
+    search_fields = ('^name',)
 
 
 class TagViewSet(mixins.ListModelMixin,
@@ -152,12 +148,16 @@ class RecipeViewSet(ModelViewSet):
             serializer.is_valid(raise_exception=True)
             Favorite.objects.create(user=user, recipe=recipe)
             return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
+                            status=status.HTTP_201_CREATED)
         else:
-            get_object_or_404(Favorite, user=user.id,
-                              recipe=recipe.id).delete()
-            return Response({'detail': 'Рецепт успешно удален из избранного.'},
-                            status=status.HTTP_204_NO_CONTENT)
+            try:
+                Favorite.objects.get(user=user.id, recipe=recipe.id).delete()
+            except:
+                ValueError('Страница не найдена.')
+            finally:
+                return Response(
+                    {'detail': 'Рецепт успешно удален из избранного.'},
+                    status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthorOnly])
@@ -166,9 +166,11 @@ class RecipeViewSet(ModelViewSet):
         items = IngredientInRecipe.objects.select_related(
             'recipe', 'ingredient'
         )
+        print(items)
         items = items.filter(
-            recipe__shopping_carts__user=request.user
+            recipe__shopping_user__user=request.user
         )
+
         shopping_cart = items.values(
             'ingredient__name', 'ingredient__measurement_unit'
         ).annotate(
@@ -199,7 +201,10 @@ class RecipeViewSet(ModelViewSet):
             ShoppingCart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            get_object_or_404(
-                ShoppingCart, recipe=recipe).delete()
-            return Response({'detail': 'Список покупок успешно удален.'},
-                            status=status.HTTP_200_OK)
+            try:
+                ShoppingCart.objects.get(recipe=recipe).delete()
+            except:
+                ValueError('Страница не найдена.')
+            finally:
+                return Response({'detail': 'Список покупок успешно удален.'},
+                                status=status.HTTP_200_OK)
