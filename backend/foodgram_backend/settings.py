@@ -9,11 +9,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', '1234')
 
 DEBUG = True
 # DEBUG = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = ['158.160.30.4',
-                 'foodgramproject.myddns.me',
-                 '127.0.0.1',
-                 'localhost']
-# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -111,7 +108,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = BASE_DIR / 'collected_static'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_URL = '/media/'
 
