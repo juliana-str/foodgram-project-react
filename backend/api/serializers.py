@@ -327,7 +327,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         if not ShoppingCart.objects.filter(
                 user=self.context['request'].user,
                 recipe=self.context['request'].recipe
-                ).exists():
+        ).exists():
             raise serializers.ValidationError('Рецепт уже в корзине.')
 
     def to_representation(self, instance):

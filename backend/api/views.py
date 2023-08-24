@@ -36,6 +36,9 @@ from .permissions import IsAuthorOnly
 from .pagination import CustomPaginator
 
 
+NO_DATA_EXEPTION = 'Страница не найдена.'
+
+
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователей."""
     queryset = User.objects.all()
@@ -77,8 +80,8 @@ class CustomUserViewSet(UserViewSet):
         else:
             try:
                 Subscribe.objects.get(user=user, author=author).delete()
-            except:
-                ValueError('Страница не найдена.')
+            except Exception:
+                NO_DATA_EXEPTION
             finally:
                 return Response({'detail': 'Успешная отписка.'},
                                 status=status.HTTP_204_NO_CONTENT)
@@ -152,8 +155,8 @@ class RecipeViewSet(ModelViewSet):
         else:
             try:
                 Favorite.objects.get(user=user.id, recipe=recipe.id).delete()
-            except:
-                ValueError('Страница не найдена.')
+            except Exception:
+                NO_DATA_EXEPTION
             finally:
                 return Response(
                     {'detail': 'Рецепт успешно удален из избранного.'},
@@ -198,8 +201,7 @@ class RecipeViewSet(ModelViewSet):
         else:
             try:
                 ShoppingCart.objects.get(recipe=recipe).delete()
-            except:
-                ValueError('Страница не найдена.')
-            finally:
-                return Response({'detail': 'Список покупок успешно удален.'},
-                                status=status.HTTP_200_OK)
+            except Exception:
+                NO_DATA_EXEPTION
+            return Response({'detail': 'Список покупок успешно удален.'},
+                            status=status.HTTP_200_OK)
