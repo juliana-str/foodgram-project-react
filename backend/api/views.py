@@ -166,21 +166,16 @@ class RecipeViewSet(ModelViewSet):
         items = IngredientInRecipe.objects.select_related(
             'recipe', 'ingredient'
         )
-        print(items)
-        items = items.filter(
-            recipe__shopping_user__user=request.user
-        )
-
+        items = items.filter(recipe__shopping_carts__user=request.user).all()
         shopping_cart = items.values(
             'ingredient__name', 'ingredient__measurement_unit'
         ).annotate(
             name=F('ingredient__name'),
             units=F('ingredient__measurement_unit'),
-            total=Sum('amount'),
+            total=Sum('amount')
         ).order_by('-total')
-
         text = '\n'.join(
-            [f"{item['name']} ({item['units']}) - {items['total']}"
+            [f"{item.get('name')} ({item.get('units')}) - {item.get('total')}"
              for item in shopping_cart]
         )
         filename = 'foodgram_shopping_cart.txt'
