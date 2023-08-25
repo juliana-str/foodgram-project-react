@@ -25,7 +25,8 @@ INSTALLED_APPS = [
     'django_filters',
     'users',
     'api',
-    'recipes'
+    'recipes',
+    'colorfield'
 ]
 
 AUTH_USER_MODEL = 'users.User'

@@ -1,3 +1,4 @@
+from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
@@ -19,6 +20,12 @@ class Ingredient(models.Model):
         ordering = ['name']
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_ingredient'
+            )
+        ]
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
@@ -33,13 +40,12 @@ class Tag(models.Model):
     )
     slug = models.SlugField(
         max_length=200,
-        null=True,
         unique=True,
         verbose_name='Уникальный слаг'
     )
-    color = models.CharField(
+    color = ColorField(
         max_length=7,
-        null=True,
+        default='#FF0000',
         unique=True,
         verbose_name='Цвет в HEX'
     )
@@ -128,7 +134,6 @@ class IngredientInRecipe(models.Model):
                 fields=['recipe', 'ingredient'],
                 name='unique_ingredients'
             )
-
         ]
 
     def __str__(self):
