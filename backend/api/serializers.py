@@ -16,7 +16,9 @@ from users.models import Subscribe, User
 
 class UserGetSerializer(UserCreateSerializer):
     """Сериалайзер для модели пользователей, просмотр."""
-    is_subscribed = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField(
+        method_name='get_is_subscribed'
+    )
 
     class Meta:
         fields = ('id',
@@ -28,11 +30,12 @@ class UserGetSerializer(UserCreateSerializer):
                   )
         model = User
 
-    def get_is_subscribed(self, request):
-        if self.context['request'].user.is_authenticated:
-            return Subscribe.objects.filter(
+    def get_is_subscribed(self, obj):
+        return (
+            self.context.get('request').user.is_authenticated
+            and Subscribe.objects.filter(
                 user=self.context['request'].user).exists()
-        return False
+        )
 
 
 class UserPostSerializer(UserCreateSerializer):
@@ -104,7 +107,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             ),
         )
 
-    def validate_self_subscribe(self, data):
+    def validate_author(self, data):
         """Проверка подписки на самого себя."""
         if self.context['request'].user == data:
             raise serializers.ValidationError(
@@ -187,25 +190,22 @@ class RecipeListSerializer(serializers.ModelSerializer):
         read_only=True,
         source='recipes'
     )
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField(
+        method_name='get_is_favorited'
+    )
+    is_in_shopping_cart = serializers.SerializerMethodField(
+        method_name='get_is_in_shopping_cart'
+    )
 
     class Meta:
         model = Recipe
         exclude = ('pub_date',)
 
     def get_is_favorited(self, obj):
-        return (
-            self.context.get('request').user.is_authenticated
-            and Favorite.objects.filter(user=self.context['request'].user,
-                                        recipe=obj).exists())
+        return Favorite.objects.filter(recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        return (
-            self.context.get('request').user.is_authenticated
-            and ShoppingCart.objects.filter(
-                user=self.context['request'].user,
-                recipe=obj).exists())
+        return ShoppingCart.objects.filter(recipe=obj).exists()
 
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
@@ -225,10 +225,13 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_ingredients(self, data):
         if len(data) < 1:
             raise serializers.ValidationError('Нужно добавить ингредиент!')
-        for ingredient in data:
-            if not Ingredient.objects.filter(id=ingredient['id']).exists():
+        for i in range(len(data)-1):
+            if not Ingredient.objects.filter(id=data[i]['id']).exists():
                 raise serializers.ValidationError(
                     'Нужно выбрать ингредиент из представленных!')
+            if data[i] in data[i + 1:]:
+                raise serializers.ValidationError(
+                    'Такой ингредиент уже есть в рецепте!')
         return data
 
     def validate_amount(self, data):
@@ -323,12 +326,10 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         )
         return shopping_cart
 
-    def validate_shopping_cart(self):
-        if not ShoppingCart.objects.filter(
-                user=self.context['request'].user,
-                recipe=self.context['request'].recipe
-        ).exists():
+    def validate_recipe(self, data):
+        if ShoppingCart.objects.filter(recipe=data).exists():
             raise serializers.ValidationError('Рецепт уже в корзине.')
+        return data
 
     def to_representation(self, instance):
         instance = instance['recipe']
