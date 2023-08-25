@@ -29,7 +29,9 @@ class UserGetSerializer(UserCreateSerializer):
         model = User
 
     def get_is_subscribed(self, obj):
-        return Subscribe.objects.filter(author=obj).exists()
+        return (obj.is_authenticated
+                and Subscribe.objects.filter(author=obj).exists()
+                )
 
 
 class UserPostSerializer(UserCreateSerializer):
