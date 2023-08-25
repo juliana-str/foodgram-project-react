@@ -41,6 +41,6 @@ services:
       - foodgram_static:/var/html/static/
       - foodgram_media:/var/html/media/
     ports:
-      - 8000:80
+      - 7000:80
     depends_on:
       - backend
