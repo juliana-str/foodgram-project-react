@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import (AllowAny, IsAuthenticated)
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
+from .exeptions import NoDataException
 from .filters import RecipeFilter, IngredientFilter
 from .serializers import (
     FavoriteSerializer,
@@ -36,9 +37,6 @@ from .permissions import IsAuthorOnly
 from .pagination import CustomPaginator
 
 
-NO_DATA_EXEPTION = 'Страница не найдена.'
-
-
 class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователей."""
     queryset = User.objects.all()
@@ -60,8 +58,7 @@ class CustomUserViewSet(UserViewSet):
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         self.request.user.save()
-        return Response({'detail': 'Пароль успешно изменен.'},
-                        status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
@@ -77,14 +74,12 @@ class CustomUserViewSet(UserViewSet):
             Subscribe.objects.create(user=user, author=author)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        else:
-            try:
-                Subscribe.objects.get(user=user, author=author).delete()
-            except Exception:
-                NO_DATA_EXEPTION
-            finally:
-                return Response({'detail': 'Успешная отписка.'},
-                                status=status.HTTP_204_NO_CONTENT)
+        try:
+            Subscribe.objects.get(user=user, author=author).delete()
+        except NoDataException:
+            'Подписки на этого автора нет!'
+        finally:
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
             pagination_class=CustomPaginator,
@@ -152,15 +147,13 @@ class RecipeViewSet(ModelViewSet):
             Favorite.objects.create(user=user, recipe=recipe)
             return Response(serializer.data,
                             status=status.HTTP_201_CREATED)
-        else:
-            try:
-                Favorite.objects.get(user=user.id, recipe=recipe.id).delete()
-            except Exception:
-                NO_DATA_EXEPTION
-            finally:
-                return Response(
-                    {'detail': 'Рецепт успешно удален из избранного.'},
-                    status=status.HTTP_204_NO_CONTENT)
+
+        try:
+            Favorite.objects.get(user=user.id, recipe=recipe.id).delete()
+        except NoDataException:
+            'Этого рецепта нет в избранном!'
+        finally:
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthorOnly])
@@ -194,14 +187,14 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         if request.method == 'POST':
             serializer = ShoppingCartSerializer(
-                data={'user': user.id, 'recipe': recipe.id})
+                    data={'user': user.id, 'recipe': recipe.id})
             serializer.is_valid(raise_exception=True)
             ShoppingCart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            try:
-                ShoppingCart.objects.get(recipe=recipe).delete()
-            except Exception:
-                NO_DATA_EXEPTION
-            return Response({'detail': 'Список покупок успешно удален.'},
-                            status=status.HTTP_200_OK)
+
+        try:
+            ShoppingCart.objects.get(recipe=recipe).delete()
+        except NoDataException:
+            'Этого рецепта нет в списке покупок!'
+        finally:
+            return Response(status=status.HTTP_204_NO_CONTENT)
