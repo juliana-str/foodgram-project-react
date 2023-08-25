@@ -30,7 +30,8 @@ class UserGetSerializer(UserCreateSerializer):
 
     def get_is_subscribed(self, obj):
         return (obj.is_authenticated
-                and Subscribe.objects.filter(author=obj).exists()
+                and Subscribe.objects.filter(
+                    author=obj, user=self.context['request'].user).exists()
                 )
 
 
@@ -217,13 +218,13 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_ingredients(self, data):
         if len(data) < 1:
             raise serializers.ValidationError('Нужно добавить ингредиент!')
-        for i in range(len(data) - 1):
-            if not Ingredient.objects.filter(id=data[i]['id']).exists():
+        for i, val in enumerate(data):
+            if not Ingredient.objects.filter(id=val['id']).exists():
                 raise serializers.ValidationError(
                     'Нужно выбрать ингредиент из представленных!')
-            if data[i] in data[i + 1:]:
+            if data.count(val) > 1:
                 raise serializers.ValidationError(
-                    'Такой ингредиент уже есть в рецепте!')
+                    'Ингредиенты не должны повторяться!')
         return data
 
     def validate_amount(self, data):
