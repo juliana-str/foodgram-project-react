@@ -217,7 +217,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_ingredients(self, data):
         if len(data) < 1:
             raise serializers.ValidationError('Нужно добавить ингредиент!')
-        for i in range(len(data)-1):
+        for i in range(len(data) - 1):
             if not Ingredient.objects.filter(id=data[i]['id']).exists():
                 raise serializers.ValidationError(
                     'Нужно выбрать ингредиент из представленных!')

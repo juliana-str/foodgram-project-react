@@ -187,7 +187,7 @@ class RecipeViewSet(ModelViewSet):
         user = request.user
         if request.method == 'POST':
             serializer = ShoppingCartSerializer(
-                    data={'user': user.id, 'recipe': recipe.id})
+                data={'user': user.id, 'recipe': recipe.id})
             serializer.is_valid(raise_exception=True)
             ShoppingCart.objects.create(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_200_OK)
