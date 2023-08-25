@@ -12,7 +12,6 @@ def read_ingredients():
         data = json.load(f)
         for i in range(len(data)):
             Ingredient.objects.get_or_create(
-                id=i,
                 name=data[i].get("name"),
                 measurement_unit=data[i].get("measurement_unit")
             )
@@ -25,7 +24,6 @@ def read_tags():
         data = json.load(f)
         for i in range(len(data)):
             Tag.objects.get_or_create(
-                id=i,
                 name=data[i].get("name"),
                 slug=data[i].get("slug"),
                 color=data[i].get("color")
