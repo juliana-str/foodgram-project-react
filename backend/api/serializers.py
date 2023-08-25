@@ -16,9 +16,7 @@ from users.models import Subscribe, User
 
 class UserGetSerializer(UserCreateSerializer):
     """Сериалайзер для модели пользователей, просмотр."""
-    is_subscribed = serializers.SerializerMethodField(
-        method_name='get_is_subscribed'
-    )
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         fields = ('id',
@@ -31,11 +29,7 @@ class UserGetSerializer(UserCreateSerializer):
         model = User
 
     def get_is_subscribed(self, obj):
-        return (
-            self.context.get('request').user.is_authenticated
-            and Subscribe.objects.filter(
-                user=self.context['request'].user).exists()
-        )
+        return Subscribe.objects.filter(author=obj).exists()
 
 
 class UserPostSerializer(UserCreateSerializer):
@@ -190,12 +184,8 @@ class RecipeListSerializer(serializers.ModelSerializer):
         read_only=True,
         source='recipes'
     )
-    is_favorited = serializers.SerializerMethodField(
-        method_name='get_is_favorited'
-    )
-    is_in_shopping_cart = serializers.SerializerMethodField(
-        method_name='get_is_in_shopping_cart'
-    )
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
