@@ -1,39 +1,46 @@
 version: '3.3'
 
 volumes:
-  pg_data_production:
-  static:
-  media:
-  redoc:
+  pg_data_foodgram:
+  foodgram_static:
+  foodgram_media:
+  foodgram_redoc:
 
 services:
   db:
     image: postgres:13.10-alpine
     env_file: ../.env
     volumes:
-      - pg_data_production:/var/lib/postgresql/data
+      - pg_data_foodgram:/var/lib/postgresql/data
 
   backend:
     image: julianastr/foodgram_backend
     env_file: ../.env
+    restart: always
     depends_on:
       - db
     volumes:
-      - static:/app/static
-      - media:/app/media/
+      - foodgram_static:/backend_static
+      - foodgram_media:/app/media/
 
   frontend:
     image: julianastr/foodgram_frontend
     env_file: ../.env
-    command: cp -r /app/build/. /static/
+    command: cp -r /app/build/. /frontend_static/
     volumes:
-      - static:/app/static
+      - foodgram_static:/frontend_static
 
   nginx:
     image: julianastr/foodgram_gateway
     env_file: ../.env
+    restart: always
     volumes:
-      - static:/var/html/static/
-      - media:/var/html/media/
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ../frontend/build:/usr/share/nginx/html/
+      - ../docs/:/usr/share/nginx/html/api/docs/
+      - foodgram_static:/var/html/static/
+      - foodgram_media:/var/html/media/
     ports:
       - 8000:80
+    depends_on:
+      - backend
