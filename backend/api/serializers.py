@@ -29,10 +29,9 @@ class UserGetSerializer(UserCreateSerializer):
         model = User
 
     def get_is_subscribed(self, obj):
-        user = self.context['request'].user
-        return (user.is_authenticated
+        return (self.context['request'].user.is_authenticated
                 and Subscribe.objects.filter(
-                    author=obj, user=user).exists()
+                    author=obj, user=self.context['request'].user).exists()
                 )
 
 
@@ -219,13 +218,15 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_ingredients(self, data):
         if len(data) < 1:
             raise serializers.ValidationError('Нужно добавить ингредиент!')
+        ingredients = []
         for i, val in enumerate(data):
             if not Ingredient.objects.filter(id=val['id']).exists():
                 raise serializers.ValidationError(
                     'Нужно выбрать ингредиент из представленных!')
-            if data.count(val) > 1:
-                raise serializers.ValidationError(
-                    'Ингредиенты не должны повторяться!')
+            ingredients.append(val['id'])
+        if len(ingredients) != len(set(ingredients)):
+            raise serializers.ValidationError(
+                'Ингредиенты не должны повторяться!')
         return data
 
     def validate_amount(self, data):
