@@ -62,6 +62,10 @@ python3 manage.py runserver
 
 ### Вход на сайт https//:foodgramproject.myddns.me
 
+superuser: admin
+
+password: 01021983
+
 ### Регистрация
 
 Отправить POST-запрос на добавление нового пользователя на эндпоинт /api/users/
