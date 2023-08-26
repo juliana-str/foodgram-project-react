@@ -194,7 +194,7 @@ class RecipeViewSet(ModelViewSet):
         shopping_cart = ShoppingCart.objects.filter(
             recipe=recipe.id, user=user.id)
         if not shopping_cart:
-            return Response({'detail': 'Этого рецепта нет в списке покупок!'},
+            return Response({'detail': 'Страница не найдена.'},
                             status=status.HTTP_404_NOT_FOUND)
         shopping_cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
