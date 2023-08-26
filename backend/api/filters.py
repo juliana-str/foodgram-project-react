@@ -4,7 +4,6 @@ from recipes.models import Ingredient, Recipe, Tag
 
 class RecipeFilter(filters.FilterSet):
     """Фильтры рецептов."""
-    author = filters.CharFilter(field_name='author_id')
     tags = filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         to_field_name='slug',
@@ -20,13 +19,13 @@ class RecipeFilter(filters.FilterSet):
 
     def get_is_favorited(self, queryset, name, value):
         if self.request.user.is_authenticated:
-            return queryset.filter(favorites__user=self.request.user).all()
+            return queryset.filter(favorites__user=self.request.user)
         return queryset
 
     def get_is_in_shopping_cart(self, queryset, name, value):
         if self.request.user.is_authenticated:
             return queryset.filter(
-                shopping_carts__user=self.request.user).all()
+                shopping_carts__user=self.request.user)
         return queryset
 
 
