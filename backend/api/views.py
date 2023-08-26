@@ -75,7 +75,7 @@ class CustomUserViewSet(UserViewSet):
 
         subscribe = Subscribe.objects.filter(user=user, author=author)
         if not subscribe:
-            return Response({'erorrs': 'Подписки на этого автора нет!'},
+            return Response({'errors': 'Подписки на этого автора нет!'},
                             status=status.HTTP_400_BAD_REQUEST)
         subscribe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -149,7 +149,7 @@ class RecipeViewSet(ModelViewSet):
 
         favorite = Favorite.objects.filter(user=user.id, recipe=recipe.id)
         if not favorite:
-            return Response({'erorrs': 'Этого рецепта нет в избранном!'},
+            return Response({'errors': 'Этого рецепта нет в избранном!'},
                             status=status.HTTP_400_BAD_REQUEST)
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -194,7 +194,7 @@ class RecipeViewSet(ModelViewSet):
         shopping_cart = ShoppingCart.objects.filter(
             recipe=recipe.id, user=user.id)
         if not shopping_cart:
-            return Response({'erorrs': 'Этого рецепта нет в списке покупок!'},
+            return Response({'errors': 'Этого рецепта нет в списке покупок!'},
                             status=status.HTTP_400_BAD_REQUEST)
         shopping_cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
