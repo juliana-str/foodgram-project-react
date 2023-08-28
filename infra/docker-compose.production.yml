@@ -20,7 +20,7 @@ services:
       - db
     volumes:
       - static:/static
-      - media:/app/media
+      - media:/media
 
   frontend:
     image: julianastr/foodgram_frontend
@@ -35,8 +35,8 @@ services:
     env_file: ../.env
     restart: always
     volumes:
-      - foodgram_static:/static/
-      - foodgram_media:/app/media
+      - static:/static/
+      - media:/media
     ports:
       - 8000:80
     depends_on:
