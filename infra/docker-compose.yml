@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
     env_file: ../.env
     volumes:
-      - static:/backend_static
+      - static:/static
       - media:/app/media
     depends_on:
       - db
