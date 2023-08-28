@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3'
 
 volumes:
   pg_data:
@@ -33,10 +33,9 @@ services:
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
-      - db
       - backend
 
-  nginx:
+  gateway:
     image: nginx:1.19.3
     env_file: ../.env
     ports:
