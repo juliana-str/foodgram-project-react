@@ -20,7 +20,7 @@ services:
       - db
     volumes:
       - static:/static
-      - media:/media
+      - media:/app/media
 
   frontend:
     image: julianastr/foodgram_frontend
@@ -36,7 +36,7 @@ services:
     restart: always
     volumes:
       - static:/static/
-      - media:/media/
+      - media:/app/media/
     ports:
       - 8000:80
     depends_on:
