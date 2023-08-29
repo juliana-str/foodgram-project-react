@@ -19,14 +19,14 @@ services:
     depends_on:
       - db
     volumes:
-      - static:/app/static
+      - static:/static
       - media:/app/media
 
   frontend:
     image: julianastr/foodgram_frontend
     env_file: .env
     volumes:
-      - static:/app/static
+      - static:/static
       - media:/app/media
 
   gateway:
@@ -36,7 +36,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
-      - static:/app/static
+      - static:/static
       - media:/app/media
     depends_on:
       - backend
