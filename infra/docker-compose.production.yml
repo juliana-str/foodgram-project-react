@@ -24,14 +24,16 @@ services:
 
   frontend:
     image: julianastr/foodgram_frontend
-    command: cp -r /app/build/. /static/
+    env_file: .env
+    command: cp -r /app/build/. /frontend_static/
     volumes:
-      - static:/static
+      - static:/frontend_static
     depends_on:
       - db
 
   nginx:
     image: julianastr/foodgram_gateway
+    env_file: .env
     volumes:
       - static:/static
       - media:/app/media
