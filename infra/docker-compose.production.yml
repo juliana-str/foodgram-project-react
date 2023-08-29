@@ -27,7 +27,8 @@ services:
     env_file: .env
     command: cp -r /app/build/. /static/
     volumes:
-      - ../frontend/:/app/result_build/
+      - static:/static
+      - media:/app/media
 
   gateway:
     image: julianastr/foodgram_gateway
