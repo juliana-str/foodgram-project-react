@@ -33,7 +33,7 @@ services:
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
-      - backend
+      - db
 
   gateway:
     image: nginx:1.19.3
