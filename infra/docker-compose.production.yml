@@ -26,14 +26,13 @@ services:
     image: julianastr/foodgram_frontend
     env_file: .env
     volumes:
-      - static:/static
-      - media:/app/media
+      - ../frontend/:/app/result_build/
 
   gateway:
     image: julianastr/foodgram_gateway
     env_file: .env
     volumes:
-      - static:/static
-      - media:/app/media
+      - static:/var/html/static
+      - media:var/html/media
     depends_on:
       - backend
