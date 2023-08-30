@@ -32,7 +32,7 @@ services:
     image: julianastr/foodgram_gateway
     env_file: .env
     volumes:
-      - static:/var/html/static
-      - media:var/html/media
+      - static:/static
+      - media:/app/media
     depends_on:
       - backend
