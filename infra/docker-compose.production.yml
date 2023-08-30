@@ -26,7 +26,8 @@ services:
     image: julianastr/foodgram_frontend
     env_file: .env
     volumes:
-      - ../frontend/:/app/result_build/
+      - static:/static
+      - media:/app/media
 
   gateway:
     image: julianastr/foodgram_gateway
