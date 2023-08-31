@@ -32,8 +32,7 @@ class RecipeFilter(filters.FilterSet):
 class IngredientFilter(filters.FilterSet):
     """Фильтры тегов."""
     ingredient = filters.CharFilter(
-        field_name='name',
-        lookup_expr='istartswith'
+        lookup_expr='name__istartswith'
     )
 
     class Meta:

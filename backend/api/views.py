@@ -84,8 +84,7 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[IsAuthorOnly])
     def subscriptions(self, request):
         """Метод получения всех подписок."""
-        queryset = self.filter_queryset(User.objects.filter(
-            following__user=request.user).all())
+        queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
         if page:
             serializer = SubscriptionsSerializer(
@@ -106,7 +105,7 @@ class IngredientViewSet(mixins.ListModelMixin,
     pagination_class = CustomPaginator
     filter_backends = (filters.SearchFilter,)
     filterset_class = IngredientFilter
-    search_fields = ('^name',)
+    # search_fields = ('^name',)
 
 
 class TagViewSet(mixins.ListModelMixin,
