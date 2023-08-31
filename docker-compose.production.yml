@@ -19,21 +19,21 @@ services:
     depends_on:
       - db
     volumes:
-      - static:/static
+      - static:/app/static
       - media:/app/media
 
   frontend:
     image: julianastr/foodgram_frontend
     env_file: .env
     volumes:
-      - static:/static
+      - static:/app/static
       - media:/app/media
 
   gateway:
     image: julianastr/foodgram_gateway
     env_file: .env
     volumes:
-      - static:/static
+      - static:/app/static
       - media:/app/media
     depends_on:
       - backend
