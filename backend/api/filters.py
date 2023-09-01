@@ -1,8 +1,8 @@
-from django_filters import rest_framework as filters
+from django_filters.rest_framework import filters, FilterSet
 from recipes.models import Ingredient, Recipe, Tag
 
 
-class RecipeFilter(filters.FilterSet):
+class RecipeFilter(FilterSet):
     """Фильтры рецептов."""
     tags = filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
@@ -18,22 +18,19 @@ class RecipeFilter(filters.FilterSet):
         fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
 
     def get_is_favorited(self, queryset, name, value):
-        if self.request.user.is_authenticated:
-            return queryset.filter(favorites__user=self.request.user)
+        if value and self.request.user.is_authenticated:
+             return queryset.filter(favorites__user=self.request.user)
         return queryset
 
     def get_is_in_shopping_cart(self, queryset, name, value):
-        if self.request.user.is_authenticated:
-            return queryset.filter(
-                shopping_carts__user=self.request.user)
+        if value and self.request.user.is_authenticated:
+            return queryset.filter(shopping_carts__user=self.request.user)
         return queryset
 
 
-class IngredientFilter(filters.FilterSet):
-    """Фильтры тегов."""
-    ingredient = filters.CharFilter(
-        lookup_expr='name__istartswith'
-    )
+class IngredientFilter(FilterSet):
+    """Фильтры ингредиентов."""
+    name = filters.CharFilter(lookup_expr='istartswith')
 
     class Meta:
         model = Ingredient
