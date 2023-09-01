@@ -40,6 +40,7 @@ class CustomUserViewSet(UserViewSet):
     """Вьюсет для модели пользователей."""
     queryset = User.objects.all()
     filter_backends = (DjangoFilterBackend,)
+    permission_classes = (IsAuthenticated,)
     pagination_class = CustomPaginator
     search_fields = ('username', 'email')
     lookup_fields = ('name', 'id')
@@ -86,13 +87,10 @@ class CustomUserViewSet(UserViewSet):
         """Метод получения всех подписок."""
         queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
-        if page:
-            serializer = SubscriptionsSerializer(
-                page, many=True, context={'request': request})
-            return self.get_paginated_response(serializer.data)
+        # if page:
         serializer = SubscriptionsSerializer(
-            queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+            page, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
 
 class IngredientViewSet(mixins.ListModelMixin,
@@ -102,10 +100,10 @@ class IngredientViewSet(mixins.ListModelMixin,
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
-    pagination_class = CustomPaginator
+    pagination_class = None
     filter_backends = (filters.SearchFilter,)
     filterset_class = IngredientFilter
-    # search_fields = ('^name',)
+    search_fields = ('^name',)
 
 
 class TagViewSet(mixins.ListModelMixin,
