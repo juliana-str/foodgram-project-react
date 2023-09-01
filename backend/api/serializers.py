@@ -182,6 +182,7 @@ class RecipeListSerializer(serializers.ModelSerializer):
     """Сериалайзер для модели рецептов."""
     author = UserGetSerializer(read_only=True)
     image = Base64ImageField()
+    tags = TagSerializer(many=True, read_only=True)
     ingredients = IngredientInRecipeSerializer(
         many=True,
         read_only=True,
@@ -195,16 +196,29 @@ class RecipeListSerializer(serializers.ModelSerializer):
         exclude = ('pub_date',)
 
     def get_is_favorited(self, obj):
-        if self.context['request'].user.is_authenticated:
-            return Favorite.objects.filter(
-                recipe=obj, user=self.context['request'].user).exists()
-        return Favorite.objects.filter(recipe=obj).exists()
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            return False
+        return request.user.favoriting.filter(recipe=object).exists()
+
+
+        # return (
+        #     self.context.get('request').user.is_authenticated
+        #     and Favorite.objects.filter(user=self.context['request'].user,
+        #                                  author=obj).exists()
+        # )
 
     def get_is_in_shopping_cart(self, obj):
-        if self.context['request'].user.is_authenticated:
-            return ShoppingCart.objects.filter(
-                recipe=obj, user=self.context['request'].user).exists()
-        return ShoppingCart.objects.filter(recipe=obj).exists()
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
+            return False
+        return request.user.shopping_cart.filter(recipe=object).exists()
+
+
+        # return (
+        #         self.context.get('request').user.is_authenticated
+        #         and ShoppingCart.objects.filter(
+        #     user=self.context['request'].user, recipe=obj).exists())
 
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
