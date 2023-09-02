@@ -87,7 +87,6 @@ class CustomUserViewSet(UserViewSet):
         """Метод получения всех подписок."""
         queryset = User.objects.filter(following__user=request.user)
         page = self.paginate_queryset(queryset)
-        # if page:
         serializer = SubscriptionsSerializer(
             page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
