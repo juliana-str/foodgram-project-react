@@ -19,14 +19,14 @@ services:
     depends_on:
       - db
     volumes:
-      - static:/static
+      - static:/backend_static
       - media:/app/media
 
   frontend:
     image: julianastr/foodgram_frontend
     command: cp -r /app/build/. /static/
     volumes:
-      - static:/static
+      - static:/frontend_static
 
   gateway:
     image: julianastr/foodgram_gateway
@@ -36,7 +36,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./frontend/build:/usr/share/nginx/html/
-      - static:/static
+      - static:/staticfiles
       - media:/app/media
     depends_on:
       - backend
