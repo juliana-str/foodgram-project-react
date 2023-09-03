@@ -233,14 +233,21 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     def validate_amount(self, data):
         if data < 1:
             raise serializers.ValidationError(
-                'Количество продукта должно быть больше 0')
+                'Количество продукта должно быть больше 0!')
         return data
 
     def validate_cooking_time(self, data):
         if data < 1:
             raise serializers.ValidationError(
-                'Время приготовления не может быть меньше 1 минуты')
+                'Время приготовления не может быть меньше 1 минуты!')
         return data
+
+    def validate_text(self, data):
+        if data in Recipe.objects.filter(text=data).exists():
+            raise serializers.ValidationError(
+                'Такой рецепт уже есть!')
+        return data
+
 
     @transaction.atomic
     def create(self, validated_data):
