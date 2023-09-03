@@ -242,11 +242,11 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 'Время приготовления не может быть меньше 1 минуты!')
         return data
 
-    def validate_text(self, data):
-        if data in Recipe.objects.filter(text=data).exists():
-            raise serializers.ValidationError(
-                'Такой рецепт уже есть!')
-        return data
+    # def validate_text(self, data):
+    #     if data in Recipe.objects.filter(text=data).exists():
+    #         raise serializers.ValidationError(
+    #             'Такой рецепт уже есть!')
+    #     return data
 
 
     @transaction.atomic
