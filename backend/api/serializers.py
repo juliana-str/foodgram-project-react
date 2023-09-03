@@ -196,16 +196,10 @@ class RecipeListSerializer(serializers.ModelSerializer):
         exclude = ('pub_date',)
 
     def get_is_favorited(self, obj):
-        request = self.context.get('request')
-        if request and self.context.get('request').user.is_authenticated:
-            return Favorite.objects.filter(
-                user=self.context['request'].user, author=obj).exists()
+        return Favorite.objects.filter(recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        if request and self.context.get('request').user.is_authenticated:
-            return ShoppingCart.objects.filter(
-               user=self.context['request'].user, recipe=obj).exists()
+        return ShoppingCart.objects.filter(recipe=obj).exists()
 
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
