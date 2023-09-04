@@ -156,7 +156,7 @@ POST-запрос пользователя на создание рецепта:
                 "amount": 2
             }
         ],
-        "image": "http://127.0.0.1:8000/media/recipes/media/%D0%B1%D0%BB%D0%B8%D0%BD%D1%8B_GjtOUPa.jpg",
+        "image": "http://foodgramproject.myddns.me/media/recipes/media/e2626a1b-19cb-4633-9cfa-ed93e39b0d47.webp",
         "text": "Ароматные блинчики!",
         "cooking_time": 35,
         "is_favorited": false,
