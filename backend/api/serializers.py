@@ -201,7 +201,6 @@ class RecipeListSerializer(serializers.ModelSerializer):
             return False
         return Favorite.objects.filter(user=user, recipe=obj).exists()
 
-
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
         if user.is_anonymous:
@@ -254,7 +253,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Такой рецепт уже есть!')
         return data
-
 
     @transaction.atomic
     def create(self, validated_data):
