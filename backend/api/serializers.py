@@ -196,9 +196,17 @@ class RecipeListSerializer(serializers.ModelSerializer):
         exclude = ('pub_date',)
 
     def get_is_favorited(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+             return Favorite.objects.filter(
+                 favorites__user=user, recipe=obj).exists()
         return Favorite.objects.filter(recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            return ShoppingCart.objects.filter(
+                shopping_carts__user=user, recipe=obj).exists()
         return ShoppingCart.objects.filter(recipe=obj).exists()
 
 
@@ -242,11 +250,11 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 'Время приготовления не может быть меньше 1 минуты!')
         return data
 
-    # def validate_text(self, data):
-    #     if data in Recipe.objects.filter(text=data).exists():
-    #         raise serializers.ValidationError(
-    #             'Такой рецепт уже есть!')
-    #     return data
+    def validate_image(self, data):
+        if data in Recipe.objects.filter(image=data).exists():
+            raise serializers.ValidationError(
+                'Такой рецепт уже есть!')
+        return data
 
 
     @transaction.atomic
