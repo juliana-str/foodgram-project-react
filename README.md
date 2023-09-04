@@ -21,8 +21,6 @@
   - подписываться на других пользователей
   - скачать список ингредиентов для рецептов, добавленных в "Список покупок"
 
-##Вход на сайт 
-
 https//:foodgramproject.myddns.me
 
 superuser: admin
@@ -131,7 +129,7 @@ pip install -r requirements.txt
 ```
 
 Далее необходимо собрать образы для фронтенда и бэкенда.  
-Из папки "./backend/foodgram/" выполнить команду:
+Из папки "./backend/" выполнить команду:
 ```bash
 docker build -t julianastr/foodgram_backend .
 ```
