@@ -1,4 +1,4 @@
-[![foodgram_workflow](https://github.com/juliana-str/foodgram-project-react/blob/master/.github/workflows/main.yml)](https://github.com/juliana-str/foodgram-project-react/actions/runs/6072590954)
+[![foodgram_workflow](https://github.com/juliana-str/foodgram-project-react/blob/master/.github/workflows/main.yml/badge.svg)](https://github.com/juliana-str/foodgram-project-react/blob/master/.github/workflows/main.yml)
 # "Продуктовый помощник" (Foodgram)
 
 ## 1. [Описание](#1)
