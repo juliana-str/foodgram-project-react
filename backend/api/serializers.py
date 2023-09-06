@@ -321,7 +321,9 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         model = ShoppingCart
 
     def validate_recipe(self, data):
-        if ShoppingCart.objects.filter(recipe=data).exists():
+        print(data)
+        user = self.context['request'].user
+        if ShoppingCart.objects.filter(recipe=data, user=user).exists():
             raise serializers.ValidationError('Рецепт уже в корзине.')
         return data
 
