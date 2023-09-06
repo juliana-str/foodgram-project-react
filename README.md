@@ -21,7 +21,7 @@
   - подписываться на других пользователей
   - скачать список ингредиентов для рецептов, добавленных в "Список покупок"
 
-https//:foodgramproject.myddns.me
+https://foodgramproject.myddns.me
 
 superuser: admin
 
