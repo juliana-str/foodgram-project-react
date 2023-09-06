@@ -320,12 +320,12 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         fields = ('user', 'recipe')
         model = ShoppingCart
 
-    def validate_recipe(self, data):
-        if ShoppingCart.objects.filter(
-                user=self.context['request'].user,
-                recipe=data.recipe).exists():
-            raise serializers.ValidationError('Рецепт уже в корзине.')
-        return data
+    # def validate_recipe(self, data):
+    #     if ShoppingCart.objects.filter(
+    #             user=self.context['request'].user,
+    #             recipe=data.recipe).exists():
+    #         raise serializers.ValidationError('Рецепт уже в корзине.')
+    #     return data
 
     def to_representation(self, instance):
         instance = instance['recipe']
