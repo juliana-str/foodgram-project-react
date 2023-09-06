@@ -309,27 +309,20 @@ class FavoriteSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        print(instance)
         instance = instance['recipe']
         return RecipeMinifiedSerializer(instance, context=self.context).data
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
     """Сериалайзер для списка покупок."""
-    ingredients_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
-        fields = ('ingredients_in_shopping_cart', 'user', 'recipe')
+        fields = ('user', 'recipe')
         model = ShoppingCart
 
-    def get_ingredients_in_shopping_cart(self):
-        shopping_cart = IngredientInRecipe.objects.select_related(
-            'recipe', 'ingredient'
-        )
-        return shopping_cart
-
     def validate_recipe(self, data):
-        if ShoppingCart.objects.filter(recipe=data).exists():
+        if ShoppingCart.objects.filter(
+                user=self.context['request'].user, recipe=data).exists():
             raise serializers.ValidationError('Рецепт уже в корзине.')
         return data
 
