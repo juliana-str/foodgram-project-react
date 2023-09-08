@@ -131,15 +131,21 @@ pip install -r requirements.txt
 Далее необходимо собрать образы для фронтенда и бэкенда.  
 Из папки "./backend/" выполнить команду:
 ```bash
-docker build -t julianastr/foodgram_backend .
+docker build -t username/foodgram_backend .
 ```
 
 Из папки "./frontend/" выполнить команду:
 ```bash
-docker build -t julianastr/foodgram_frontend .
+docker build -t username/foodgram_frontend .
 ```
 
-После создания образов можно создавать и запускать контейнеры.  
+Из папки "./infra/" выполнить команду:
+
+```bash
+docker build -t username/foodgram_gateway .
+```
+
+После создания образов можно создавать и запускать контейнеры. 
 Из папки "./infra/" выполнить команду:
 ```bash
 docker-compose up -d
