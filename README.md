@@ -23,10 +23,6 @@
 
 https://foodgramproject.myddns.me
 
-superuser: admin
-
-password: 01021983
-
 ---
 ## 2. Установка Docker (на платформе Ubuntu) <a id=2></a>
 
